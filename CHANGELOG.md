@@ -40,19 +40,24 @@ that moves by more than ~20%, and drop the axis to `medium` if it can't be resol
 
 ### Added — browser verification
 
-`scripts/verify.mjs` — nine checks a grep cannot make: element present, `pointer-events`, follow
-lag and convergence, hover state, click-through, duplicate instances after a route change,
-console errors, touch, and reduced-motion. Falls back to Edge or Chrome when bundled Chromium
-is missing, so a machine with a browser already installed can run it without the download.
+`scripts/verify.mjs` — eleven checks a grep cannot make: element present, `pointer-events`, follow
+lag and convergence, hover state, click-through, keyboard focus ring, modal stacking, duplicate
+instances after a route change, console errors, touch, and reduced-motion. Falls back to Edge or
+Chrome when bundled Chromium is missing, so a machine with a browser already installed can run
+it without the download.
 
-Tested against two pages:
+Tested against three pages:
 
 | Page | Result |
 |---|---|
-| a correct implementation (state-label with all three guards) | 9 passed, 0 failed |
-| `assets/preview.html`, which has no hover state, no touch guard and no reduced-motion handling | 5 passed, 4 failed — all four real |
+| a correct implementation (state-label with all three guards, plus a modal) | 11 passed, 0 failed |
+| the same page with the cursor's z-index dropped below the overlay | 10 passed, 1 failed — the modal check caught it |
+| `assets/preview.html`, which has no hover state, no touch guard and no reduced-motion handling | 7 passed, 3 failed, 1 skipped — all three failures real |
 
-`references/gating.md` now defines `rendered` as "verify.mjs passed, or the nine checks done by
+An unreachable URL exits 2 with one line instead of a stack trace, because that is the failure
+people hit first.
+
+`references/gating.md` now defines `rendered` as "verify.mjs passed, or the eleven checks done by
 hand with skips named", and says a skipped check is not a pass.
 
 ### Changed — scores are decision support, not measurement

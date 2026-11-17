@@ -46,6 +46,10 @@
     transform: none;
   }
   .cf-cursor[data-state="view"] .cf-cursor__mark::after { content: "View"; }
+
+  .sheet { position: fixed; inset: 0; display: none; place-items: center; background: rgba(0,0,0,.65); z-index: 100; }
+  .sheet.open { display: grid; }
+  .sheet__panel { background: #14161a; border: 1px solid #2a2d33; border-radius: 12px; padding: 28px 32px; }
 </style>
 </head>
 <body>
@@ -55,7 +59,15 @@
      recipe with all three guards: fine-pointer only, touch bail-out, reduced-motion bail-out.</p>
   <p><a href="#work">See the work</a><button type="button">Start a project</button></p>
   <p><a href="#more">Another link</a></p>
+  <p><button type="button" id="open">Open the sheet</button></p>
 </main>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Sheet">
+  <div class="sheet__panel">
+    <p>An overlay at z-index 100. The cursor must still be above it.</p>
+    <button type="button" id="close">Close</button>
+  </div>
+</div>
 
 <div class="cf-cursor" aria-hidden="true" data-state="" data-visible="false">
   <span class="cf-cursor__mark"></span>
@@ -99,6 +111,13 @@
 
   addEventListener('pointerleave', () => { el.dataset.visible = 'false'; });
   still.addEventListener('change', () => location.reload());
+
+  const sheet = document.getElementById('sheet');
+  document.getElementById('open').addEventListener('click', () => sheet.classList.add('open'));
+  document.getElementById('close').addEventListener('click', () => sheet.classList.remove('open'));
+
+  // ?broken=1 puts the cursor under the overlay, so the verifier has something to fail
+  if (new URLSearchParams(location.search).has('broken')) el.style.zIndex = '1';
 })();
 </script>
 </body>

@@ -224,12 +224,13 @@ node scripts/verify.mjs http://localhost:3000 --cursor .cf-cursor --json verify.
 
 It opens the page and checks what a grep cannot: the element exists and is visible, it has
 `pointer-events: none`, it lags then converges, hover changes its state, a click still reaches
-the control underneath, a route change doesn't spawn a second one, the console stays clean, a
-tap doesn't make it appear, and `prefers-reduced-motion` disables the follow. Nine checks,
-each one a failure this skill has seen in the wild.
+the control underneath, focus keeps its ring, a route change doesn't spawn a second one, the
+console stays clean, a tap doesn't make it appear, and `prefers-reduced-motion` disables the
+follow. Ten checks run by default; add `--modal "#trigger"` for an eleventh that opens an
+overlay and compares its stacking against the cursor.
 
 Playwright is the only optional dependency in the package. If it isn't installed, or the page
-can't be served, do the same nine checks by hand at 1366×768 and 390×844 — and if you don't,
+can't be served, do the same eleven checks by hand at 1366×768 and 390×844 — and if you don't,
 the report says `NOT_TESTED: rendered behaviour` in those words. Never imply you saw it.
 
 A skipped check is not a pass. `verify.mjs` prints skips separately for that reason: it means

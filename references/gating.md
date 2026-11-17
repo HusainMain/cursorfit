@@ -159,7 +159,7 @@ The greps above prove the code *says* the right things. They cannot prove it wor
 `pointer-events: none` on the wrong element still swallows clicks, and a reduced-motion block
 that targets the wrong query still animates.
 
-`scripts/verify.mjs` drives a real browser and checks nine things a grep cannot:
+`scripts/verify.mjs` drives a real browser and checks eleven things a grep cannot:
 
 | Check | Catches |
 |---|---|
@@ -168,6 +168,8 @@ that targets the wrong query still animates.
 | `follow` | no lag, or lag that never converges |
 | `hover-state` | no state hook, or a hook on the wrong control |
 | `click-through` | a wrapper or overlay eats the click |
+| `keyboard` | focus losing its visible ring |
+| `modal` | cursor hidden under an overlay, or overlay never opens |
 | `route-change` | a second instance after navigation |
 | `console` | errors the cursor introduced |
 | `touch` | `cursor: none` leaking onto a phone |
@@ -176,11 +178,16 @@ that targets the wrong query still animates.
 ```bash
 npm i -D playwright && npx playwright install chromium   # once
 node scripts/verify.mjs http://localhost:3000 --cursor .cf-cursor --json verify.json
+node scripts/verify.mjs http://localhost:3000 --modal "#open-menu"
 ```
 
+The modal check needs a trigger and an overlay. `--modal` takes the trigger selector; the
+overlay is found by `[role="dialog"]`, `[aria-modal="true"]` or `dialog[open]`. If the overlay
+is something else, pass `--overlay ".my-sheet"`. Without `--modal`, that check reports `skip`.
+
 It falls back to Edge or Chrome if the bundled Chromium was never downloaded, so a machine
-with a browser already installed can run it without the 150MB download. Exit code 1 means at
-least one check failed.
+with a browser already installed can run it without the 150MB download. Exit code 0 means
+everything passed, 1 means at least one check failed, 2 means it could not run.
 
 A skipped check is not a pass. It means the page did not expose enough to test — no visible
 control, no cursor element, no observable state change — and the report must name the skip
@@ -191,7 +198,7 @@ instead of claiming the behaviour.
 | Level | Meaning |
 |---|---|
 | **static** | greps pass, build passes, files are wired into the entry point |
-| **rendered** | `verify.mjs` passed, or the nine checks were done by hand at 1366×768 and 390×844 with every skip named |
+| **rendered** | `verify.mjs` passed, or the eleven checks were done by hand at 1366×768 and 390×844 with every skip named |
 | **not tested** | neither of the above |
 
 A report may say `rendered` only if a browser was actually driven. Source inspection is

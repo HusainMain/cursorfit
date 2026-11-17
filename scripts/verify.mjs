@@ -9,6 +9,7 @@
  *
  *   node scripts/verify.mjs http://localhost:3000
  *   node scripts/verify.mjs http://localhost:3000 --cursor .cf-cursor --hover "a[href], button"
+ *   node scripts/verify.mjs http://localhost:3000 --modal "#open-menu"
  *   node scripts/verify.mjs http://localhost:3000 --json verify.json --headed
  *
  * Requires Playwright. It is the skill's only optional dependency, and it is only needed for
@@ -31,6 +32,8 @@ const has = (name) => argv.includes(name);
 const url = argv.find((a) => /^https?:\/\//.test(a));
 const selector = flag('--cursor', '.cf-cursor');
 const hoverSel = flag('--hover', 'a[href], button, [role="button"]');
+const modalSel = flag('--modal');
+const overlaySel = flag('--overlay', '[role="dialog"], [aria-modal="true"], dialog[open]');
 const jsonPath = flag('--json');
 const headed = has('--headed');
 
@@ -126,6 +129,18 @@ async function launch() {
 
 const browser = await launch();
 
+// A refused connection is the most common failure, and a stack trace is a bad way to say it.
+async function open(p, target) {
+  try {
+    await p.goto(target, { waitUntil: 'load', timeout: 45000 });
+  } catch (e) {
+    console.error(`Could not load ${target}\n${String(e.message).split('\n')[0]}`);
+    console.error('Is the dev server running, and is the URL right?');
+    await browser.close();
+    process.exit(2);
+  }
+}
+
 try {
   // ---------------------------------------------------------------- desktop context
   const ctx = await browser.newContext({ viewport: { width: 1366, height: 768 } });
@@ -138,7 +153,7 @@ try {
   });
   page.on('pageerror', (e) => pageErrors.push(e.message));
 
-  await page.goto(url, { waitUntil: 'load', timeout: 45000 });
+  await open(page, url);
   await sleep(400);
 
   // 1. does the element exist at all
@@ -243,27 +258,97 @@ try {
     } else {
       await page.evaluate(() => {
         window.__cfHits = 0;
-        document.addEventListener(
-          'click',
-          (e) => {
-            window.__cfHits += 1;
-            e.preventDefault(); // keep the page still; we only need to know the click landed
-            e.stopPropagation();
-          },
-          { capture: true }
-        );
+        window.__cfClickHandler = (e) => {
+          window.__cfHits += 1;
+          e.preventDefault(); // keep the page still; we only need to know the click landed
+          e.stopPropagation();
+        };
+        document.addEventListener('click', window.__cfClickHandler, { capture: true });
       });
       await page.mouse.move(target.x, target.y);
       await sleep(350);
       await page.mouse.down();
       await page.mouse.up();
       await sleep(120);
-      const hits = await page.evaluate(() => window.__cfHits);
+      const hits = await page.evaluate(() => {
+        document.removeEventListener('click', window.__cfClickHandler, { capture: true });
+        return window.__cfHits;
+      });
       record('click-through', hits === 1 ? 'pass' : 'fail', `${hits} click event(s) reached the page`);
     }
   }
 
-  // 6. a route change must not spawn a second cursor
+  // 6. keyboard focus must stay visible — a custom cursor must never replace the focus ring
+  {
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+    await page.keyboard.press('Tab');
+    await sleep(150);
+    const focus = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return null;
+      const cs = getComputedStyle(el);
+      const outline = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
+      return { tag: el.tagName.toLowerCase(), outline: `${cs.outlineStyle} ${cs.outlineWidth}`, shadow: cs.boxShadow !== 'none', ring: outline || cs.boxShadow !== 'none' };
+    });
+
+    if (!focus) record('keyboard', 'fail', 'Tab moved focus nowhere — no focusable element, or focus is trapped');
+    else if (focus.ring) record('keyboard', 'pass', `focus on <${focus.tag}> keeps ${focus.shadow ? 'a box-shadow ring' : `outline ${focus.outline}`}`);
+    else record('keyboard', 'fail', `focus on <${focus.tag}> has no outline and no box-shadow — keyboard users lose their place`);
+  }
+
+  // 7. modal: the cursor must sit above the overlay and still let clicks through
+  if (!modalSel) {
+    record('modal', 'skip', 'pass --modal "<trigger selector>" to check an overlay');
+  } else if (!first) {
+    record('modal', 'skip', 'no cursor element to inspect');
+  } else {
+    const trigger = await page.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, modalSel);
+
+    if (!trigger) {
+      record('modal', 'skip', `no element matches "${modalSel}"`);
+    } else {
+      await page.mouse.move(trigger.x, trigger.y);
+      await sleep(120);
+      await page.mouse.click(trigger.x, trigger.y);
+      await sleep(600);
+
+      const stack = await page.evaluate(
+        ([cursor, overlay]) => {
+          const c = document.querySelector(cursor);
+          const m = document.querySelector(overlay);
+          const z = (el) => (el ? (getComputedStyle(el).zIndex === 'auto' ? null : parseInt(getComputedStyle(el).zIndex, 10)) : null);
+          return {
+            found: Boolean(m),
+            open: m ? getComputedStyle(m).display !== 'none' && m.getBoundingClientRect().height > 0 : false,
+            cursorZ: z(c),
+            modalZ: z(m),
+            cursorVisible: c ? parseFloat(getComputedStyle(c).opacity) > 0.05 : false,
+          };
+        },
+        [selector, overlaySel]
+      );
+
+      if (!stack.found) record('modal', 'skip', `no overlay matched "${overlaySel}" — pass --overlay with the real selector`);
+      else if (!stack.open) record('modal', 'skip', 'the trigger did not open a visible overlay');
+      else if (!stack.cursorVisible) record('modal', 'pass', 'cursor hides itself while the overlay is open');
+      else if (stack.cursorZ !== null && stack.modalZ !== null) {
+        record(
+          'modal',
+          stack.cursorZ >= stack.modalZ ? 'pass' : 'fail',
+          `cursor z-index ${stack.cursorZ} vs overlay ${stack.modalZ}`
+        );
+      } else {
+        record('modal', 'skip', 'z-index is auto on one of the two — check the stacking context by hand');
+      }
+    }
+  }
+
+  // 8. a route change must not spawn a second cursor
   if (!first) {
     record('route-change', 'skip', 'no element to inspect');
   } else {
@@ -281,7 +366,7 @@ try {
     );
   }
 
-  // 7. console must stay clean
+  // 9. console must stay clean
   record(
     'console',
     consoleErrors.length === 0 && pageErrors.length === 0 ? 'pass' : 'fail',
@@ -299,7 +384,7 @@ try {
     isMobile: true,
   });
   const touchPage = await touchCtx.newPage();
-  await touchPage.goto(url, { waitUntil: 'load', timeout: 45000 });
+  await open(touchPage, url);
   await sleep(300);
 
   const beforeTap = await centreOf(touchPage, selector);
@@ -319,7 +404,7 @@ try {
   // ---------------------------------------------------------------- reduced motion
   const rmCtx = await browser.newContext({ viewport: { width: 1366, height: 768 }, reducedMotion: 'reduce' });
   const rmPage = await rmCtx.newPage();
-  await rmPage.goto(url, { waitUntil: 'load', timeout: 45000 });
+  await open(rmPage, url);
   await sleep(300);
 
   const rmFirst = await centreOf(rmPage, selector);

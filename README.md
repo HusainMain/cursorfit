@@ -149,7 +149,7 @@ node scripts/audit.mjs path/to/repo --out cursorfit.json
 ```
 
 Static, offline, zero dependencies, ~300ms. It never opens a browser and never makes a request.
-`scripts/verify.mjs` is the other half: it needs a browser and does the opposite — nine checks
+`scripts/verify.mjs` is the other half: it needs a browser and does the opposite — eleven checks
 driven against a live page.
 
 ## What it refuses to do
@@ -190,7 +190,7 @@ section exists to prevent.
 ## Verification — greps are not enough
 
 `references/gating.md` has nine static rules, and they catch the common breakages. They cannot
-catch the interesting ones. So `scripts/verify.mjs` drives a real browser and checks nine
+catch the interesting ones. So `scripts/verify.mjs` drives a real browser and checks eleven
 behaviours:
 
 | Check | Catches |
@@ -200,6 +200,8 @@ behaviours:
 | `follow` | no lag, or lag that never converges |
 | `hover-state` | no state hook, or a hook on the wrong control |
 | `click-through` | a wrapper or overlay eats the click |
+| `keyboard` | focus losing its visible ring |
+| `modal` | cursor under an overlay, or overlay never opens |
 | `route-change` | a second instance after navigation |
 | `console` | errors the cursor introduced |
 | `touch` | `cursor: none` leaking onto a phone |
@@ -208,6 +210,7 @@ behaviours:
 ```bash
 npm i -D playwright && npx playwright install chromium   # once, optional
 node scripts/verify.mjs http://localhost:3000 --cursor .cf-cursor --json verify.json
+node scripts/verify.mjs http://localhost:3000 --modal "#open-menu"
 ```
 
 It falls back to Edge or Chrome if bundled Chromium was never downloaded. Playwright is the
@@ -229,7 +232,7 @@ references/gating.md      the nine rules and the repair checklist
 references/recommendation.md   the report shape, plus a worked example
 references/credits.md     what came from where
 scripts/audit.mjs         repo → cursorfit.json
-scripts/verify.mjs        the page → nine browser checks
+scripts/verify.mjs        the page → eleven browser checks
 assets/shapes.css         seven silhouettes, zero images
 assets/cursors/*.svg      four image cursors with hotspots
 assets/preview.html       open this to see both sets
