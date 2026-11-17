@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cursorfit — cursor assets preview</title>
+<link rel="stylesheet" href="shapes.css">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --panel: #101216;
+    --rule: #1e2024;
+    --text: #e9e9e9;
+    --muted: #8a8f98;
+    --accent: #00f0ff;
+
+    /* the two tokens every cursor binds to */
+    --cf-color: var(--accent);
+    --cf-size: 12px;
+    --cf-settle: 280ms;
+    --cf-ease: cubic-bezier(.23, 1, .32, 1);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 400 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  header { border-bottom: 1px solid var(--rule); padding-bottom: 24px; margin-bottom: 40px; }
+  h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .kicker {
+    display: inline-block; margin-bottom: 14px; color: var(--accent);
+    font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  }
+
+  h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 48px 0 16px; }
+
+  /* ---------- live stage ---------- */
+  #stage {
+    position: relative; overflow: hidden;
+    height: 260px; border: 1px solid var(--rule); border-radius: 10px;
+    background:
+      radial-gradient(circle at 22% 24%, rgba(0, 240, 255, .10), transparent 42%),
+      radial-gradient(circle at 78% 72%, rgba(169, 134, 255, .10), transparent 44%),
+      var(--panel);
+    display: grid; place-items: center;
+  }
+  #stage.live, #stage.live * { cursor: none; }
+  #stage p { margin: 0; color: var(--muted); font-size: 13px; pointer-events: none; }
+
+  .cf-cursor { position: absolute; top: 0; left: 0; pointer-events: none; opacity: 0; will-change: transform; }
+  .cf-cursor[data-visible="true"] { opacity: 1; }
+  .cf-cursor__mark {
+    display: block;
+    width: var(--cf-size); height: var(--cf-size);
+    border-radius: 50%;
+    background: var(--cf-color);
+    transition: transform var(--cf-settle) var(--cf-ease), background-color var(--cf-settle) var(--cf-ease), border-color var(--cf-settle) var(--cf-ease);
+  }
+  .cf-cursor[data-state="hover"] .cf-cursor__mark { transform: scale(var(--cf-hover, 4.6)); }
+
+  .switcher { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .switcher button {
+    appearance: none; background: var(--panel); color: var(--text);
+    border: 1px solid var(--rule); border-radius: 999px;
+    padding: 7px 14px; font: inherit; font-size: 12.5px; cursor: pointer;
+  }
+  .switcher button:hover { border-color: #3a3f47; }
+  .switcher button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- swatch grid ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(216px, 1fr)); gap: 12px; }
+  .card {
+    border: 1px solid var(--rule); border-radius: 10px; padding: 18px;
+    background: var(--panel); min-height: 148px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .demo { height: 54px; display: grid; place-items: center; }
+  .demo .cf-cursor__mark { --cf-size: 22px; }
+  .name { font-size: 13.5px; font-weight: 600; margin-top: 10px; }
+  .best { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ---------- image cursor tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .tile {
+    border: 1px solid var(--rule); border-radius: 10px; padding: 22px 16px;
+    text-align: center; font-size: 12.5px; user-select: none;
+  }
+  .tile.dark { background: var(--panel); color: var(--text); }
+  .tile.light { background: #f4f4f2; color: #17181a; border-color: #d8d8d4; }
+  .tile span { display: block; margin-top: 8px; opacity: .6; font-size: 11.5px; }
+
+  .tile.t-arrow  { cursor: url("cursors/arrow.svg") 2 1, auto; }
+  .tile.t-pointer { cursor: url("cursors/pointer.svg") 14 4, pointer; }
+  .tile.t-cross { cursor: url("cursors/crosshair.svg") 16 16, crosshair; }
+  .tile.t-dot   { cursor: url("cursors/dot.svg") 16 16, default; }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 12.5px; }
+  code { background: #17191d; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    .wrap { padding: 36px 16px 72px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="kicker">cursorfit · assets</span>
+    <h1>Cursor shapes and image cursors</h1>
+    <p class="sub">The visual half of the catalogue. The choice of which one belongs on a site comes from the profile, not from this page.</p>
+  </header>
+
+  <h2>Try it — move inside the box</h2>
+  <div id="stage">
+    <p>move the pointer here</p>
+    <div class="cf-cursor" aria-hidden="true"><span class="cf-cursor__mark cf-shape--ring"></span></div>
+  </div>
+  <div class="switcher" role="group" aria-label="Cursor shape">
+    <button data-shape="circle" aria-pressed="false">circle</button>
+    <button data-shape="ring" aria-pressed="true">ring</button>
+    <button data-shape="square" aria-pressed="false">square</button>
+    <button data-shape="crosshair" aria-pressed="false">crosshair</button>
+    <button data-shape="pill" aria-pressed="false">pill</button>
+    <button data-shape="bracket" aria-pressed="false">bracket</button>
+    <button data-shape="blob" aria-pressed="false">blob</button>
+  </div>
+
+  <h2>Shapes — enlarged for visibility</h2>
+  <div class="grid">
+    <div class="card"><div class="demo"><span class="cf-cursor__mark cf-shape--circle"></span></div>
+      <div><div class="name">circle</div><div class="best">The default. Any site that wants a dot.</div></div></div>
+
+    <div class="card"><div class="demo"><span class="cf-cursor__mark cf-shape--ring"></span></div>
+      <div><div class="name">ring</div><div class="best">Hollow. Editorial, portfolio, image-led.</div></div></div>
+
+    <div class="card"><div class="demo"><span class="cf-cursor__mark cf-shape--square"></span></div>
+      <div><div class="name">square</div><div class="best">Sharp. Tools, grids, technical products.</div></div></div>
+
+    <div class="card"><div class="demo"><span class="cf-cursor__mark cf-shape--crosshair"></span></div>
+      <div><div class="name">crosshair</div><div class="best">Aiming. Maps, editors, precision work.</div></div></div>
+
+    <div class="card"><div class="demo"><span class="cf-cursor__mark cf-shape--pill"></span></div>
+      <div><div class="name">pill</div><div class="best">A brush, not a point. Editorial, art direction.</div></div></div>
+
+    <div class="card"><div class="demo"><span class="cf-cursor__mark cf-shape--bracket"></span></div>
+      <div><div class="name">bracket</div><div class="best">A viewfinder. Galleries, case-study grids.</div></div></div>
+
+    <div class="card"><div class="demo"><span class="cf-cursor__mark cf-shape--blob"></span></div>
+      <div><div class="name">blob</div><div class="best">Soft and uneven. Wellness, hospitality, craft.</div></div></div>
+  </div>
+
+  <h2>Image cursors — hover a tile</h2>
+  <div class="tiles">
+    <div class="tile dark t-arrow">arrow<span>hotspot 2 1</span></div>
+    <div class="tile dark t-pointer">pointer<span>hotspot 14 4</span></div>
+    <div class="tile dark t-cross">crosshair<span>hotspot 16 16</span></div>
+    <div class="tile dark t-dot">dot<span>hotspot 16 16</span></div>
+  </div>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile light t-arrow">arrow<span>hotspot 2 1</span></div>
+    <div class="tile light t-pointer">pointer<span>hotspot 14 4</span></div>
+    <div class="tile light t-cross">crosshair<span>hotspot 16 16</span></div>
+    <div class="tile light t-dot">dot<span>hotspot 16 16</span></div>
+  </div>
+
+  <footer>
+    The image cursors are white with a dark outline on purpose — a coloured cursor disappears over a section of the same colour.
+    SVG cursors cannot read <code>currentColor</code> or <code>var()</code>, so colour is baked into the file.
+  </footer>
+</div>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const el = stage.querySelector('.cf-cursor');
+  const mark = stage.querySelector('.cf-cursor__mark');
+  const buttons = [...document.querySelectorAll('.switcher button')];
+
+  let tx = 0, ty = 0, x = 0, y = 0, started = false, raf = 0, running = false;
+
+  const tick = () => {
+    x += (tx - x) * 0.19;
+    y += (ty - y) * 0.19;
+    el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+    raf = requestAnimationFrame(tick);
+  };
+
+  stage.addEventListener('mouseenter', (e) => {
+    stage.classList.add('live');
+    const r = stage.getBoundingClientRect();
+    tx = e.clientX - r.left; ty = e.clientY - r.top;
+    if (!started) { x = tx; y = ty; started = true; }
+    el.dataset.visible = 'true';
+    if (!running) { running = true; raf = requestAnimationFrame(tick); }
+  });
+
+  stage.addEventListener('mousemove', (e) => {
+    const r = stage.getBoundingClientRect();
+    tx = e.clientX - r.left;
+    ty = e.clientY - r.top;
+  });
+
+  stage.addEventListener('mouseleave', () => {
+    stage.classList.remove('live');
+    el.dataset.visible = 'false';
+    el.dataset.state = '';
+  });
+
+  // highlight the hoverable card in the stage
+  stage.addEventListener('mouseover', () => { el.dataset.state = ''; });
+
+  buttons.forEach((b) => {
+    b.addEventListener('click', () => {
+      buttons.forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+      mark.className = 'cf-cursor__mark cf-shape--' + b.dataset.shape;
+    });
+  });
+})();
+</script>
+</body>
+</html>

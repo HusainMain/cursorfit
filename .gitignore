@@ -1,0 +1,22 @@
+# dependencies (only if you run the audit inside a project that has them)
+node_modules/
+
+# audit output
+cursorfit.json
+
+# secrets
+.env
+.env.*
+
+# logs
+*.log
+npm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editors
+.vscode/
+.idea/

@@ -1,0 +1,119 @@
+/*
+  cursorfit — shape module
+  Add one class to the existing mark. Nothing else changes: same JS, same colour token,
+  same state machine.
+
+    <div class="cf-cursor" aria-hidden="true">
+      <span class="cf-cursor__mark cf-shape--crosshair"></span>
+    </div>
+
+  Requires `--cf-color`, `--cf-size`, and the base `.cf-cursor__mark` from the recipe.
+  Load after cursor.css so the specificity below wins without !important.
+*/
+
+.cf-cursor__mark {
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- circle (default) */
+.cf-cursor__mark.cf-shape--circle {
+  width: var(--cf-size);
+  height: var(--cf-size);
+  border: 0;
+  border-radius: 50%;
+  background: var(--cf-color);
+}
+
+/* ---------------------------------------------------------------- ring */
+/* Hollow. The safest shape for a site that wants a cursor but not a blob. */
+.cf-cursor__mark.cf-shape--ring {
+  width: calc(var(--cf-size) * 1.6);
+  height: calc(var(--cf-size) * 1.6);
+  border: 1.5px solid var(--cf-color);
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------- square */
+/* Sharp corners for precise, technical, grid-driven sites. */
+.cf-cursor__mark.cf-shape--square {
+  width: calc(var(--cf-size) * 1.15);
+  height: calc(var(--cf-size) * 1.15);
+  border: 0;
+  border-radius: 2px;
+  background: var(--cf-color);
+  --cf-hover: 4.2;
+}
+
+/* ---------------------------------------------------------------- crosshair */
+/* Two lines, no fill. For tools, editors, maps, anything with an aiming metaphor. */
+.cf-cursor__mark.cf-shape--crosshair {
+  width: calc(var(--cf-size) * 1.9);
+  height: calc(var(--cf-size) * 1.9);
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(var(--cf-color), var(--cf-color)) center / 1.5px 100% no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) center / 100% 1.5px no-repeat;
+  --cf-hover: 3.2;
+}
+
+/* ---------------------------------------------------------------- pill */
+/* Wider than tall. Reads as a "brush" rather than a point. Editorial sites. */
+.cf-cursor__mark.cf-shape--pill {
+  width: calc(var(--cf-size) * 2.1);
+  height: calc(var(--cf-size) * 0.8);
+  border: 0;
+  border-radius: 999px;
+  background: var(--cf-color);
+  --cf-hover: 4;
+}
+
+/* ---------------------------------------------------------------- bracket */
+/* Four corners. A viewfinder — for galleries and image-led grids. */
+.cf-cursor__mark.cf-shape--bracket {
+  --b: calc(var(--cf-size) * 0.8);    /* arm length */
+  --t: 1.5px;                          /* arm thickness */
+  width: calc(var(--cf-size) * 2.2);
+  height: calc(var(--cf-size) * 2.2);
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(var(--cf-color), var(--cf-color)) left  top    / var(--b) var(--t) no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) left  top    / var(--t) var(--b) no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) right top    / var(--b) var(--t) no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) right top    / var(--t) var(--b) no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) left  bottom / var(--b) var(--t) no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) left  bottom / var(--t) var(--b) no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) right bottom / var(--b) var(--t) no-repeat,
+    linear-gradient(var(--cf-color), var(--cf-color)) right bottom / var(--t) var(--b) no-repeat;
+  --cf-hover: 2.8;
+}
+
+/* ---------------------------------------------------------------- blob */
+/* An uneven squircle. Soft, organic sites. The asymmetry is the point. */
+.cf-cursor__mark.cf-shape--blob {
+  width: calc(var(--cf-size) * 1.5);
+  height: calc(var(--cf-size) * 1.35);
+  border: 0;
+  border-radius: 38% 62% 58% 42% / 44% 36% 64% 56%;
+  background: var(--cf-color);
+  --cf-hover: 4.4;
+}
+
+/*
+  Any labelled state collapses back to a ring. A 72px crosshair or bracket reads as a
+  targeting reticle, not a cursor — the label needs a container, and a circle is the only
+  shape that holds text cleanly.
+*/
+.cf-cursor[data-state="view"] .cf-cursor__mark[class*="cf-shape--"] {
+  width: calc(var(--cf-size) * 7.2);
+  height: calc(var(--cf-size) * 7.2);
+  border: 1px solid var(--cf-color);
+  border-radius: 50%;
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-cursor__mark { transition: none; }
+}
