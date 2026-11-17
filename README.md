@@ -177,7 +177,7 @@ a confidence level.
 | Blind spot | Why it exists | What happens |
 |---|---|---|
 | inline styles | values set in JSX objects never reach a stylesheet | counted, flagged, files named |
-| utility classes | Tailwind resolves values at build time | counted; `cssDepth` drops to partial |
+| utility classes | Tailwind resolves values at build time | counted; stylesheet depth drops to partial |
 | CSS-in-JS | styled-components and emotion generate rules at runtime | detected; axis confidence drops |
 | component tags | `<Button>` is counted at the call site, not its internals | counted and flagged |
 | no stylesheet | nothing to measure | every CSS axis becomes a question |
