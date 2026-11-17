@@ -17,9 +17,14 @@ Every recipe assumes the same base. Read the base once; each family adds to it.
   --cf-color: var(--neon-cyan, currentColor);
   --cf-color-ink: var(--site-bg, #050505);
   --cf-size: 10px;
-  --cf-hover: 5.6;          /* multiplier: 10px × 5.6 = 56px */
   --cf-settle: 300ms;
   --cf-ease: cubic-bezier(.23, 1, .32, 1);
+
+  /* The state layer. Families tune these numbers; none of them delete a state. */
+  --cf-hover: 2.4;          /* over a link: 10px × 2.4 = 24px ring */
+  --cf-button-x: 3.2;       /* over a button: the dot becomes a wide capsule */
+  --cf-button-y: 1.3;
+  --cf-label-scale: 7.2;    /* only used by state-label */
 }
 
 .cf-cursor {
@@ -46,24 +51,70 @@ Every recipe assumes the same base. Read the base once; each family adds to it.
   transition:
     transform var(--cf-settle) var(--cf-ease),
     background-color var(--cf-settle) var(--cf-ease),
-    border-color var(--cf-settle) var(--cf-ease);
+    border-color var(--cf-settle) var(--cf-ease),
+    box-shadow var(--cf-settle) var(--cf-ease),
+    opacity 140ms linear;
 }
 
-.cf-cursor[data-state="hover"] .cf-cursor__mark { transform: scale(var(--cf-hover)); }
+/* ---------------------------------------------------------------------------
+   Base state layer - mandatory, not decorative
+
+   A mark that behaves identically everywhere is the most common reason a custom
+   cursor reads as a sticker dropped on the page. These four states cost about
+   20 lines of CSS and are resolved by the JS below for every family, so a site
+   with no [data-cursor] markup still tells the visitor what is under the pointer:
+
+     link      the dot opens into a hollow ring
+     button    the dot stretches into a capsule, echoing the control's shape
+     text      the mark gets out of the way and the native caret returns
+     disabled  no change, dimmed - a hover state on a dead control is a lie
+
+   Families override the numbers through the tokens above. Nothing here uses
+   !important, and nothing here depends on markup the site does not already have.
+--------------------------------------------------------------------------- */
+
+.cf-cursor[data-state="link"] .cf-cursor__mark {
+  transform: scale(var(--cf-hover));
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cf-color);
+}
+
+.cf-cursor[data-state="button"] .cf-cursor__mark {
+  transform: scale(var(--cf-button-x), var(--cf-button-y));
+}
+
+/* Every direct child, so a family that adds a ring or a second layer is covered. */
+.cf-cursor[data-state="text"] > * {
+  opacity: 0;
+  transform: scale(.6);
+}
+
+/* A label is a pseudo-element, so the rule above does not reach it. If a field was
+   annotated by mistake, the word must leave with the mark. `display` rather than
+   `opacity`, because state-label animates the label's opacity and an animation
+   beats a normal declaration. */
+.cf-cursor[data-state="text"]::after { display: none; }
+
+.cf-cursor[data-state="disabled"] .cf-cursor__mark { opacity: .35; }
 
 /*
   Only applied after JS init (html.cf-active), so a failed script leaves the
-  native cursor working. Inputs keep their I-beam on purpose.
+  native cursor working. Text controls keep their I-beam on purpose; every other
+  control is replaced by the cursor, including submit inputs, which are buttons.
 */
 html.cf-active,
-html.cf-active *:not(input):not(textarea):not(select):not([contenteditable]) {
+html.cf-active * {
   cursor: none;
 }
 
-html.cf-active input,
-html.cf-active textarea,
-html.cf-active select,
-html.cf-active [contenteditable] {
+html.cf-active :is(
+  input:not([type]),
+  input[type="text"], input[type="search"], input[type="email"], input[type="url"],
+  input[type="tel"], input[type="password"], input[type="number"],
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable="false"])
+) {
   cursor: auto;
 }
 
@@ -117,9 +168,53 @@ export function initCursor({ lerp = LERP, root = document.documentElement } = {}
     raf = requestAnimationFrame(tick);
   };
 
+  /* ------------------------------------------------------------------ state
+     Resolved from pointerover, which fires once per element entered - not once
+     per movement - and only written when the answer changes. A handful of
+     closest() calls per control, zero work between controls.
+
+     The selector lists are deliberately tag-based. A site does not have to
+     annotate anything for the cursor to acknowledge a link, a button or a
+     field; data-cursor only adds a label on top of the state it would get
+     anyway. That is the difference between a state layer and a checklist.
+  */
+  const TEXTUAL = 'input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="tel"], input[type="password"], input[type="number"], textarea, select, [contenteditable]:not([contenteditable="false"])';
+  const DEAD = '[disabled], [aria-disabled="true"], :disabled';
+
+  const resolve = (target) => {
+    if (!(target instanceof Element)) return { state: '', label: '' };
+    if (target.closest(DEAD)) return { state: 'disabled', label: '' };
+
+    const labelled = target.closest('[data-cursor]');
+    const label = labelled ? labelled.dataset.cursor || '' : '';
+
+    if (target.closest(TEXTUAL)) return { state: 'text', label };
+    // A button wins over a link when they nest: the inner control is what the
+    // visitor is pointing at.
+    if (target.closest('button, summary, label[for], [role="button"], [role="tab"], [role="menuitem"]')) {
+      return { state: 'button', label };
+    }
+    if (target.closest('a[href], area[href], [role="link"]')) return { state: 'link', label };
+    // Checkboxes, radios, ranges, colour and date pickers are controls, not text.
+    if (target.closest('input')) return { state: 'button', label };
+    return { state: '', label: '' };
+  };
+
+  let current = '';
+  const onOver = (e) => {
+    if (e.pointerType === 'touch') return;
+    const next = resolve(e.target);
+    if (next.state === current && next.label === (el.dataset.label || '')) return;
+    current = next.state;
+    el.dataset.state = next.state;
+    if (next.label) el.dataset.label = next.label;
+    else delete el.dataset.label;
+  };
+
   addEventListener('mousemove', onMove, { passive: true });
   document.addEventListener('mouseleave', onLeave);
   document.addEventListener('mouseenter', onEnter);
+  document.addEventListener('pointerover', onOver, { passive: true });
   addEventListener('blur', onBlur);
   raf = requestAnimationFrame(tick);
 
@@ -128,6 +223,7 @@ export function initCursor({ lerp = LERP, root = document.documentElement } = {}
     removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseleave', onLeave);
     document.removeEventListener('mouseenter', onEnter);
+    document.removeEventListener('pointerover', onOver);
     removeEventListener('blur', onBlur);
     root.classList.remove('cf-active');
     el.remove();
@@ -135,8 +231,14 @@ export function initCursor({ lerp = LERP, root = document.documentElement } = {}
 }
 ```
 
-Two things this core gets right that most hand-written cursors don't: it never shows at
-`0,0`, and it never hides the native cursor before it knows the script ran.
+Three things this core gets right that most hand-written cursors don't: it never shows at
+`0,0`, it never hides the native cursor before it knows the script ran, and it answers a link,
+a button and a field differently without a single line of markup from the site.
+
+The state goes stale in one situation: an element scrolls under a stationary pointer. Browsers
+fire `pointerover` inconsistently on scroll, so the mark can keep the last state until the
+pointer moves again. Watch for it on pages with a sticky header over links; if it bites, clear
+the state on `scroll` behind a 100ms debounce.
 
 ---
 
@@ -163,10 +265,13 @@ JS: same loop, same colour token, same states.
 
 Three rules the module enforces:
 
-- **Each shape carries its own hover size** through `--cf-hover`, because a 6× crosshair is a
-  targeting reticle and a 6× pill is a banner. The recipe scales by that variable.
+- **The resting silhouette is the site's; the states are shared.** Every shape opens the same
+  24px ring on a link and the same 32×13px capsule on a button, whatever it looks like at
+  rest. Scaling each silhouette by its own factor instead gave a 19px crosshair a 45px link
+  ring — the shape the site chose, inflated past recognition.
 - **Labelled states collapse to a ring.** A 72px bracket reads as a weapon sight, and text
-  needs a circular container. The rule is at the bottom of `shapes.css`.
+  needs a circular container. The rule is at the bottom of `shapes.css`, and it sets an
+  explicit size for that reason.
 - **Nothing is an image.** Every shape is gradients and radii, so it inherits the colour token
   and costs no request.
 
@@ -224,8 +329,25 @@ on a docs site it is the correct answer and everything above it is decoration.
 
 ## `dot` — T1
 
-Use the base, delete `.cf-cursor__mark`'s scale rule, set `--cf-size: 8px`, `LERP: 0.18`.
-No state listeners. That's the whole family.
+The base, tuned down. `--cf-size: 8px`, `--cf-hover: 1.9`, `--cf-button-x: 2.2`, `--cf-button-y: 1.2`,
+`LERP: 0.18`. No second layer, no trail, no labels. That is the whole family.
+
+```css
+:root {
+  --cf-size: 8px;
+  --cf-hover: 1.9;      /* 15px ring - a reaction, not a badge */
+  --cf-button-x: 2.2;   /* 18×10px capsule */
+  --cf-button-y: 1.2;
+}
+```
+
+Quiet is not the same as inert. The three base states still run, at the smallest sizes in the
+catalogue — a link opens a thin ring, a button stretches the dot slightly wider, a text field
+hands the caret back. On a dense page this is usually all the feedback the site can carry, and
+it is the difference between a cursor that works and one that looks frozen.
+
+**The one thing to get wrong here** is deleting the base state rules because "a dot should stay
+a dot". A 15px ring is still a dot. A mark that never changes is a bug.
 
 ---
 
@@ -272,65 +394,85 @@ Never below a 1.8:1 ratio between dot and ring lerp. Below that the ring looks g
 
 ## `state-label` — T1
 
-The family for sites with a voice. Three states is usually enough; five is usually too many.
+The base state layer, plus a word. The states run with no markup at all; the labels are the
+enhancement. That order matters — annotate nothing and the cursor still answers every link and
+button, because the resolver in the base already found them.
 
-```js
-const LABELS = {
-  view: 'View',
-  read: 'Read',
-  play: 'Play',
-  drag: 'Drag',
-};
-
-document.addEventListener('mouseover', (e) => {
-  const t = e.target.closest('[data-cursor]');
-  if (!t) return;
-  const state = t.dataset.cursor;
-  el.dataset.state = state;
-  const label = LABELS[state];
-  if (label) {
-    el.dataset.label = label;
-    el.style.setProperty('--cf-label', `"${label}"`);
-  }
-});
-
-document.addEventListener('mouseout', (e) => {
-  if (!e.target.closest('[data-cursor]')) return;
-  el.dataset.state = '';
-  el.dataset.label = '';
-});
-```
+### The label, which is optional
 
 ```css
-.cf-cursor[data-state="view"] .cf-cursor__mark {
-  transform: scale(7.2);
+.cf-cursor[data-label] .cf-cursor__mark {
+  transform: scale(var(--cf-label-scale));
   background: transparent;
-  border: 1px solid var(--cf-color);
+  box-shadow: inset 0 0 0 1px var(--cf-color);
 }
-.cf-cursor[data-state="view"] .cf-cursor::after {
-  content: var(--cf-label);
+
+.cf-cursor[data-label]::after {
+  content: attr(data-label);
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   color: var(--cf-color);
-  font: 600 11px/1 var(--cf-font, system-ui);
+  font-family: inherit;        /* the cursor is a child of body, so this is the site's face */
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
   letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: cf-label-in 160ms var(--cf-ease) both;
+}
+
+@keyframes cf-label-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 ```
 
-Markup:
+Two details worth keeping. `attr(data-label)` instead of a JS-built `--cf-label` string: nothing
+to quote, nothing to escape, and the text is visible in the DOM. And `left/top: 50%` with
+`translate(-50%,-50%)` centres the pseudo on the cursor's own origin — the outer element is a
+0×0 box, so `inset: 0` would collapse the label to nothing.
+
+### The vocabulary
+
+| `data-cursor` | Label | Use on |
+|---|---|---|
+| `view` | View | project cards, gallery items |
+| `read` | Read | article links, case studies |
+| `play` | Play | video posters |
+| `open` | Open | external links, new tabs |
+| `drag` | Drag | carousels, before/after sliders |
+
+Five is the ceiling. Past that the label stops being recognition and becomes reading.
+
+### Markup, only where a word adds something
 
 ```html
 <a href="/work/atlas" data-cursor="view">Atlas</a>
 <button data-cursor="play">Play reel</button>
 ```
 
-Sizes for labels: ring 64–88px, label 10–12px, uppercase optional. Below 64px the label
-doesn't fit; above 96px it reads as a badge rather than a cursor.
+Sizes: ring 64–88px, label 10–12px, uppercase optional. Below 64px the label doesn't fit; above
+96px it reads as a badge rather than a cursor.
 
-**The install is not done until the markup is annotated.** List every interactive group in
-the report and say which ones got a state.
+### What the install owes the report
+
+List every control group and the state it gets, including the ones with no annotation:
+
+| Control | State without markup | With markup |
+|---|---|---|
+| `<a>` in the nav | link ring | link ring |
+| project card link | link ring | `view` label |
+| `<button>` CTA | button capsule | button capsule |
+| `input` | text — mark hides | text — mark hides |
+| disabled button | dimmed, no reaction | dimmed, no reaction |
+
+The middle column is the point. **A family that only reacts where someone remembered to add an
+attribute is not a state system, it is a checklist.** If that column has empty cells, the build
+is wrong, not the site.
 
 ---
 
@@ -490,6 +632,22 @@ export function initTrail({ color = 'currentColor', max = 90, spacing = 14 } = {
 `currentColor` on a canvas resolve to the canvas's own colour — set an explicit colour from a
 token instead (read the computed value of `--cf-color` off `document.documentElement`).
 
+**The trail is the one layer the base state does not reach.** It draws on its own canvas, so
+`[data-state="text"] > *` cannot hide it, and a ribbon behind an I-beam is the thing a visitor
+remembers. Read the cursor's state and stop emitting:
+
+```js
+const cursorEl = document.querySelector('.cf-cursor');
+
+const onMove = (e) => {
+  if (cursorEl?.dataset.state === 'text') { lx = null; ly = null; return; }
+  // ...
+};
+```
+
+Clearing `lx`/`ly` matters: without it the first move after the field joins the old position to
+the new one and paints a straight line across the page.
+
 ---
 
 ## `mask-reveal` — T2
@@ -593,3 +751,6 @@ Rules that prevent the two most common React failures:
 - Do not read the pointer into state. One `useRef` and one RAF loop; a `setState` per
   `mousemove` re-renders the tree 60 times a second.
 - Import the CSS once, at the component, not in every route.
+- **The state resolver is delegated on `document`, so it survives client-side navigation.** Do
+  not re-bind it in the component or on route change; a second listener writes the same state
+  twice and, worse, stays alive after the cleanup because the first one is never removed.

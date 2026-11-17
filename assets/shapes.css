@@ -42,7 +42,6 @@
   border: 0;
   border-radius: 2px;
   background: var(--cf-color);
-  --cf-hover: 4.2;
 }
 
 /* ---------------------------------------------------------------- crosshair */
@@ -55,7 +54,6 @@
   background:
     linear-gradient(var(--cf-color), var(--cf-color)) center / 1.5px 100% no-repeat,
     linear-gradient(var(--cf-color), var(--cf-color)) center / 100% 1.5px no-repeat;
-  --cf-hover: 3.2;
 }
 
 /* ---------------------------------------------------------------- pill */
@@ -66,7 +64,6 @@
   border: 0;
   border-radius: 999px;
   background: var(--cf-color);
-  --cf-hover: 4;
 }
 
 /* ---------------------------------------------------------------- bracket */
@@ -87,7 +84,6 @@
     linear-gradient(var(--cf-color), var(--cf-color)) left  bottom / var(--t) var(--b) no-repeat,
     linear-gradient(var(--cf-color), var(--cf-color)) right bottom / var(--b) var(--t) no-repeat,
     linear-gradient(var(--cf-color), var(--cf-color)) right bottom / var(--t) var(--b) no-repeat;
-  --cf-hover: 2.8;
 }
 
 /* ---------------------------------------------------------------- blob */
@@ -98,20 +94,50 @@
   border: 0;
   border-radius: 38% 62% 58% 42% / 44% 36% 64% 56%;
   background: var(--cf-color);
-  --cf-hover: 4.4;
+}
+
+/* ------------------------------------------------------------------ states
+   The base state layer in cursor.css assumes a circular mark, where scaling is
+   enough. These shapes are not circles, and a crosshair or a bracket has its own
+   paint that a state must clear rather than draw over.
+*/
+.cf-cursor[data-state="link"] .cf-cursor__mark[class*="cf-shape--"] {
+  width: calc(var(--cf-size) * var(--cf-hover, 2.4));
+  height: calc(var(--cf-size) * var(--cf-hover, 2.4));
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cf-color);
+  transform: none;
+}
+
+/* A button state is a capsule whatever the resting silhouette was: the control
+   the visitor is pointing at is a shape too, and the mark mirrors it. Sizes are
+   explicit for the same reason as the link ring — a crosshair is 1.9x the base
+   dot, and scaling that by 3.2 would give a 70px banner instead of a capsule. */
+.cf-cursor[data-state="button"] .cf-cursor__mark[class*="cf-shape--"] {
+  width: calc(var(--cf-size) * var(--cf-button-x, 3.2));
+  height: calc(var(--cf-size) * var(--cf-button-y, 1.3));
+  border: 0;
+  border-radius: 999px;
+  background: var(--cf-color);
+  transform: none;
 }
 
 /*
   Any labelled state collapses back to a ring. A 72px crosshair or bracket reads as a
   targeting reticle, not a cursor — the label needs a container, and a circle is the only
-  shape that holds text cleanly.
+  shape that holds text cleanly. The size is explicit because scaling a 2.2x bracket by
+  7.2 would give a 158px sight.
 */
-.cf-cursor[data-state="view"] .cf-cursor__mark[class*="cf-shape--"] {
-  width: calc(var(--cf-size) * 7.2);
-  height: calc(var(--cf-size) * 7.2);
-  border: 1px solid var(--cf-color);
+.cf-cursor[data-label] .cf-cursor__mark[class*="cf-shape--"] {
+  width: calc(var(--cf-size) * var(--cf-label-scale, 7.2));
+  height: calc(var(--cf-size) * var(--cf-label-scale, 7.2));
+  border: 0;
   border-radius: 50%;
   background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cf-color);
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -16,7 +16,7 @@ yes.
 
 **VERDICT** <one sentence, no jargon, names the family and the reason>
 **CONFIDENCE** high | medium | low
-**TIER** T0 | T1 | T2 | T3 — <cost in one clause: "zero JS", "~45 lines", "a canvas layer">
+**TIER** T0 | T1 | T2 | T3 - <cost in one clause: "zero JS", "~45 own lines over the shared core", "a canvas layer">
 
 ## What the site is
 
@@ -69,21 +69,37 @@ scroll-driven: <yes/no> · reduced-motion: <present/absent> · touch guard: <pre
 | State | Cursor does |
 |---|---|
 | default | … |
-| link | … |
-| primary button | … |
-| card / media | … |
-| text | … |
-| input | native I-beam restored |
-| disabled | … |
+| link | hollow ring at `<n>`px |
+| button | capsule, `<w>`×`<h>`px |
+| card / media | ring + "View" (only where `data-cursor` was added) |
+| body text | unchanged |
+| input | mark hides, native I-beam restored |
+| disabled | dimmed, no reaction |
 | window leave | hides in 150ms |
 | touch | nothing — no cursor element at all |
 | reduced motion | nothing |
+
+**Control coverage** — every interactive group the audit found, and the state it gets. A row
+with an empty state is a build that is not finished.
+
+| Control | Count | State |
+|---|---|---|
+| nav links | 6 | link ring |
+| project card links | 4 | `view` label |
+| `<button>` CTAs | 3 | button capsule |
+| text inputs | 2 | native I-beam |
+| disabled buttons | 1 | dimmed |
 
 **It will not** — <the honest limitation of this family on this site, one sentence>
 
 **Override** *(include only if you changed the ranking)*
 Audit ranked `<family>` first at fit `<n>`. Chose `<family>` instead because `<evidence, with a
 file path or a measured value>`. What that costs: `<the downside the audit's pick did not have>`.
+
+**Tie-break** *(include only if the audit printed one)*
+`<family>` scored `<n>` against `<family>` at `<m>`, inside the 2.5-point noise band. It won
+because it reacts to `<n>` control states against `<m>`. What that costs: `<the weaker fit, in
+plain words>`.
 
 ## Alternates
 
@@ -134,6 +150,10 @@ editorial register without adding a second animation system to a page that alrea
 
 **Every profile bullet is checkable.** "Uses `cubic-bezier(0.23,1,0.32,1)` once, on the hero
 copy" is checkable. "Modern feel" is not.
+
+**Every control group appears in the coverage table.** The table is the proof that the state
+layer runs, not a description of it. If a row says "unchanged" for a link or a button, the
+build is wrong; only body text, inputs and disabled controls are allowed to say that.
 
 **Alternates are real alternatives, not strawmen.** Each must be a family that genuinely
 scored close. Putting an obviously wrong option second is worse than offering one alternate.

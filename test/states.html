@@ -1,0 +1,90 @@
+<!doctype html>
+<!--
+  cursorfit — the base state layer, as shipped in references/recipes.md.
+
+  The CSS and JS here are extracted from the docs by test/extract.mjs, not typed by hand.
+  Hover each row and watch the mark: link opens a ring, button stretches into a capsule,
+  a field makes it disappear, a disabled control ignores it. None of these elements carries
+  a data-cursor attribute — that is the whole claim.
+
+    node test/extract.mjs
+    python -m http.server 8080
+    node scripts/verify.mjs http://localhost:8080/test/states.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cursorfit — base state layer</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./_generated/cursor.css">
+<link rel="stylesheet" href="./_generated/label.css">
+<style>
+  :root { --neon-cyan: #00f0ff; --site-bg: #08090b; }
+  body {
+    margin: 0;
+    background: var(--site-bg);
+    color: #e8ecf1;
+    font: 16px/1.65 ui-sans-serif, system-ui, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 64px 24px 120px; }
+  h1 { font-size: 38px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -.02em; }
+  p { color: #98a1ad; max-width: 56ch; }
+  .row {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    padding: 18px 0; border-top: 1px solid #1b1f26;
+  }
+  .row h2 { font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+            color: #5f6b7a; width: 100%; margin: 0; font-weight: 600; }
+  a { color: var(--neon-cyan); text-decoration: none; border-bottom: 1px solid #0e5b66; }
+  button, input {
+    font: inherit; color: #e8ecf1; background: #12151a;
+    border: 1px solid #262c35; border-radius: 999px; padding: 10px 20px;
+  }
+  button { cursor: pointer; }
+  button[disabled] { opacity: .45; }
+  input { border-radius: 10px; min-width: 220px; }
+  input[type="submit"] { min-width: 0; border-radius: 999px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>The base state layer</h1>
+  <p>Nothing on this page carries <code>data-cursor</code>. Every reaction below comes from
+     the base resolver reading the element it is already over.</p>
+
+  <div class="row">
+    <h2>link — the mark opens into a ring</h2>
+    <a href="#work">A plain link</a>
+    <a href="#case">Another one</a>
+  </div>
+
+  <div class="row">
+    <h2>button — the dot stretches into a capsule, including a submit input</h2>
+    <button type="button">Start a project</button>
+    <button type="button">Book a call</button>
+    <input type="submit" value="Send">
+  </div>
+
+  <div class="row">
+    <h2>text — the mark gets out of the way, even if the field was annotated</h2>
+    <input value="type in here" aria-label="Sample field" data-cursor="type">
+  </div>
+
+  <div class="row">
+    <h2>disabled — no reaction, dimmed</h2>
+    <button type="button" disabled>Sold out</button>
+  </div>
+
+  <div class="row">
+    <h2>label — only when state-label is installed</h2>
+    <a href="#atlas" data-cursor="view">Atlas, a project card</a>
+  </div>
+</main>
+
+<script type="module">
+  import { initCursor } from './_generated/cursor.js';
+  initCursor();
+</script>
+</body>
+</html>

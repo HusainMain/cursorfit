@@ -2,10 +2,10 @@
 <!--
   cursorfit - verification fixture.
 
-  A deliberately correct implementation of the state-label family: fine-pointer only,
-  one element, pointer-events none, touch bail-out, reduced-motion bail-out. It exists to
-  prove scripts/verify.mjs can pass and not only fail. Do not copy this as production code;
-  the recipes in references/recipes.md are richer.
+  A deliberately correct implementation of a labelled cursor: fine-pointer only, one element,
+  pointer-events none, touch bail-out, reduced-motion bail-out. It exists to prove
+  scripts/verify.mjs can pass and not only fail. Do not copy this as production code; the
+  recipes in references/recipes.md are richer.
 
     python -m http.server 8080
     node scripts/verify.mjs http://localhost:8080/test/fixture.html
@@ -55,8 +55,8 @@
 <body>
 <main>
   <h1>A page with a cursor that behaves</h1>
-  <p>This fixture exists to test the verifier, not to be pretty. It implements the state-label
-     recipe with all three guards: fine-pointer only, touch bail-out, reduced-motion bail-out.</p>
+  <p>This fixture exists to test the verifier, not to be pretty. It implements a labelled
+     cursor with all three guards: fine-pointer only, touch bail-out, reduced-motion bail-out.</p>
   <p><a href="#work">See the work</a><button type="button">Start a project</button></p>
   <p><a href="#more">Another link</a></p>
   <p><button type="button" id="open">Open the sheet</button></p>

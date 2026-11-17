@@ -5,7 +5,7 @@ license: MIT
 compatibility: No runtime dependencies. Node 18+ for the optional scripts/audit.mjs reader; Playwright is optional and used only by scripts/verify.mjs for the browser pass. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
 metadata:
   author: makeityours
-  version: "0.1.1"
+  version: "0.1.2"
 ---
 
 # cursorfit
@@ -186,7 +186,16 @@ Non-negotiables:
   audit found (`var(--neon-cyan)`, `theme('colors.accent')`, an exported constant). A
   hardcoded `#00f0ff` is the difference between "matches your site" and "matches the site
   it was copied from".
-- **T1 stays under ~90 lines of JS.** If it needs more, the family is wrong for the site.
+- **The base state layer ships with every family.** Link, button, text and disabled are
+  resolved in `cursor.js` and styled in `cursor.css` before any family code is added. No
+  family deletes them; `dot` only turns the numbers down. A cursor that does nothing when it
+  crosses a button is unfinished — the visitor has no way to tell it from a sticker.
+- **Labels are the enhancement, not the state.** `[data-cursor]` adds a word on top of a
+  state that already exists. If the build only reacts where the site was annotated, the state
+  layer is missing.
+- **T1 family code stays under ~90 lines, on top of the shared core.** If the family's own
+  layer needs more, the family is wrong for the site. The core is ~100 lines once, because it
+  now carries the state layer for every family.
 - **`cursor: none` is applied by JS after the first frame**, never in static CSS. If the
   script fails, the user keeps a working cursor.
 - **Mount once.** A cursor mounted per route gives you two, then three.

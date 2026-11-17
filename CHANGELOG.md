@@ -1,5 +1,103 @@
 # Changelog
 
+## 0.1.2 — 2026-11-18
+
+### Fixed — every family looked the same
+
+Reported after running the skill on two real sites: both produced a dot with no reaction on
+hover, and every button produced the same non-state. Three causes, all real.
+
+1. **`dot`'s recipe said "No state listeners. That's the whole family."** The quiet family was
+   literally inert. A dot was all it could ever be.
+2. **`state-label` resolved state only from `[data-cursor]` markup.** On a site with none, it
+   rendered a bare dot — visually identical to `dot`, for 60 more lines. The labels were
+   documented as the enhancement but implemented as the whole state machine.
+3. **Near-ties fell to array order.** The family list is ordered simplest-first, so a 93 against
+   a 91 quietly became "the simplest one wins".
+
+### Added — a mandatory base state layer
+
+`references/recipes.md` now ships a state layer in the shared `cursor.css` and `cursor.js`. It
+resolves on `pointerover` — once per element entered, not once per movement — and needs no
+markup from the site:
+
+| State | Trigger | Mark does | Measured |
+|---|---|---|---|
+| default | nothing | dot | 10×10px |
+| `link` | `a[href]`, `[role="link"]`, `area[href]` | opens into a hollow ring | 24×24px, 1px inset |
+| `button` | `button`, `[role="button"]`, `summary`, submit inputs | stretches into a capsule | 32×13px |
+| `text` | text-like `input`, `textarea`, `select`, `[contenteditable]` | hides, native I-beam returns | opacity 0 |
+| `disabled` | `:disabled`, `[aria-disabled="true"]` | no reaction, dimmed | opacity .35 |
+| `label` | `[data-cursor]` on top of the state above | ring + word | 72×72px |
+
+`state-label` no longer owns the states; it adds `data-label` and a word. `attr(data-label)`
+replaced the JS-built `--cf-label` string, so there is nothing to quote or escape. The dot
+family keeps its quiet character by turning the numbers down (`--cf-hover: 1.9`, capsule
+`2.2 × 1.2`) rather than by deleting the states.
+
+`--cf-hover` changed meaning: it is now the **link ring multiplier** (default 2.4, was 5.6 as a
+generic hover scale). `assets/shapes.css` gained explicit link, button and label rules for all
+seven silhouettes and lost its per-shape hover factors. Those factors made sense when hover was
+"grow this shape"; under the state layer they multiplied the link ring instead, so a square
+opened a 42px ring and a blob a 44px one. Now every resting silhouette opens the same 24px ring
+and the same 32×13px capsule. Labelled states still collapse to a circle, at an explicit size,
+because a 2.2× bracket scaled by 7.2 would be a 158px sight.
+
+The line counts in the catalogue always described the family's own logic, but the shared base
+is now large enough that the number alone misleads. `families.md`, the README table and the
+audit's `PICK` line now say **own layer** and name the ~100-line shared core beside them. No
+family got smaller; the baseline became visible.
+
+### Added — a tie-break, printed
+
+The audit now counts how many control states each family can exercise **on this site** (a text
+state on a site with no fields does not count). A fit gap under 2.5 points is treated as noise,
+and inside that band a family **in the same tier** that reacts to more controls wins. It never
+crosses a tier: at equal fit the cheaper family stays. The swap is printed as `TIE-BREAK` and
+copied into the report by `references/recommendation.md`, so it is never a silent reordering. A
+tie-break never revives a blocked family or overrides a gate.
+
+Run against the validation sites after the change:
+
+| Site | Before | After |
+|---|---|---|
+| ideabridge | `state-label` 93 | `state-label` 93, 4 states |
+| BuildEx | `dot` 87 | `dot` 87, 2 states, no tie-break |
+| IssueLens | `dot` 93 | `dot` 93 |
+| portfolio | `css-static` 100 | `css-static` 100 |
+
+BuildEx keeps `dot` because `state-label` scores 17 there — the pick was never the bug. The bug
+was that the dot had nothing to do.
+
+### Added — the recipe is tested, not a copy of it
+
+`test/extract.mjs` pulls the base CSS and JS straight out of `references/recipes.md` and writes
+`test/_generated/`, which `test/states.html` loads. The test therefore exercises the code in the
+docs, and a broken code block fails the suite.
+
+```
+states.html   10 passed · 0 failed · 1 skipped (the modal check is opt-in)
+shapes.html   10 passed · 0 failed · 1 skipped
+```
+
+The skipped check is `modal`, which needs a trigger selector. Every state above was read from
+the live DOM after the transition settled, not from the source.
+
+`test/shapes.html` runs all seven silhouettes through the same four states. Every one of them
+was read back from the browser: link 24×24 ring, button 32×13 capsule, text hidden, label
+72×72 with `content: "view"`. The resting silhouettes are unchanged. The first run of that
+fixture caught the stale per-shape hover factors described above — a square opened a 42px link
+ring instead of 24px — which is why the fixture exists.
+
+### Changed — absence is a pass, not a skip
+
+`verify.mjs` reported "no cursor element" under touch and reduced motion as a `skip`. Absence is
+the correct outcome in both contexts — the recipe bails before creating anything — so it is now
+a pass with that detail. A cursor that never ran at all still fails the `element` check in the
+normal context, so this cannot hide a broken build.
+
+---
+
 ## 0.1.1 — 2026-11-18
 
 Three corrections after review. No family, recipe or gate was added or removed — the fixes are

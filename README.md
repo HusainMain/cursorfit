@@ -51,7 +51,10 @@ read the repo  →  close the gaps  →  score  →  gate  →  pick one  →  i
 6. **Asks** at most three questions, only where the code genuinely can't answer, each with a
    default so "I don't know" still produces a decision.
 7. **Builds** the winner as `cursor.css` + `cursor.js`, or a React component, wired to the
-   site's existing tokens. Then it checks its own work: greps, the build, and a real browser.
+   site's existing tokens. Every build starts with the same state layer — link opens a ring,
+   button becomes a capsule, a field hands the caret back — so no family ever ships a mark
+   that ignores what it is pointing at. Then it checks its own work: greps, the build, and a
+   real browser.
 
 Nothing is invented at build time. The colour is a token that already exists. The speed comes
 from the site's measured transitions. The size comes from its spacing.
@@ -112,7 +115,7 @@ Nine families, four tiers. Nothing here was invented for this skill — every fa
 that already exists in a published cursor skill. What's new is the ranking, the gating, and the
 decision to say no.
 
-| Tier | Family | JS | Fits | Fails when |
+| Tier | Family | Own layer | Fits | Fails when |
 |---|---|---|---|---|
 | T0 | `css-static` | 0 | docs, marketing, anything that needs zero risk | the page needs state or motion |
 | T1 | `dot` | ~25 lines | quiet, dense product UI | the site is expressive and editorial |
@@ -124,6 +127,10 @@ decision to say no.
 | T2 | `mask-reveal` | ~110 lines | galleries with real image density | fewer than 4 images |
 | T3 | `shader-ripple` | ~150 lines | sites already running a GPU canvas | no imported shader pipeline — a `package.json` entry does not count |
 
+Own layer is a comparative estimate of the family's own code. Every family except `css-static`
+also ships the shared core in `references/recipes.md` — about 100 lines including the state
+layer — so the column compares families to each other, not to zero.
+
 `magnetic` is a modifier, not a family. It attaches to whichever family wins.
 
 The theatrical tier — swarm cursors, drawn characters — is deliberately out. It's a site-wide
@@ -132,8 +139,9 @@ concept, not a cursor decision.
 ## What ships with it
 
 **`assets/shapes.css`** — seven silhouettes, pure CSS, no images: `circle`, `ring`, `square`,
-`crosshair`, `pill`, `bracket`, `blob`. Each carries its own hover scale, and any labelled
-state collapses back to a circle, because text needs a round container.
+`crosshair`, `pill`, `bracket`, `blob`. Each sits under the same state layer: a link opens a
+24px ring whatever the resting silhouette, a button becomes a 32×13px capsule, and a labelled
+element becomes a 72px circle, because text needs a round container.
 
 **`assets/cursors/*.svg`** — four image cursors for the zero-JS family, with hotspots:
 arrow `2 1`, pointer `14 4`, crosshair `16 16`, dot `16 16`. White with a dark outline, so they
@@ -232,11 +240,16 @@ references/gating.md      the nine rules and the repair checklist
 references/recommendation.md   the report shape, plus a worked example
 references/credits.md     what came from where
 scripts/audit.mjs         repo → cursorfit.json
+scripts/rank.mjs          the tie-break rule, extracted so it can be tested
 scripts/verify.mjs        the page → eleven browser checks
 assets/shapes.css         seven silhouettes, zero images
 assets/cursors/*.svg      four image cursors with hotspots
 assets/preview.html       open this to see both sets
+test/states.html          the base state layer, driven in a browser
+test/shapes.html          all seven silhouettes through the same four states
+test/tiebreak.mjs         the ranking rule's edge cases, pinned down
 test/fixture.html         a correct implementation, used to test the verifier
+test/extract.mjs          pulls the recipe code out of the docs so the test tests the docs
 ```
 
 `SKILL.md` sits at the root on purpose: that is the one hard requirement for the Agensi
@@ -244,10 +257,12 @@ package format, and it also means a plain `git clone` into a skills folder works
 
 ## Limits — read this before you judge it
 
-- **The audit is proven; the recipes aren't.** The scoring has been run on two real repos and
-  a Next-style fixture, and gave answers a designer would defend. The nine implementations are
-  rewritten from published skills and have not yet been applied to a live site. That's next,
-  and it's where bugs will appear.
+- **The audit is proven; most of the recipes aren't.** The scoring has been run on two real
+  repos and a Next-style fixture, and gave answers a designer would defend. The nine
+  implementations are rewritten from published skills and have not yet been applied to a live
+  site. The exception is the base state layer: it is extracted from `references/recipes.md` by
+  `test/extract.mjs` and driven in a browser, so what is tested is the code in the docs. The
+  family-specific layers on top of it still have not shipped anywhere.
 - **Source is not the render.** A stacking context, a fixed header, or a transform on `body`
   can change what the cursor looks like. The code cannot see that.
 - **Static analysis only sees what it can parse.** Styling can live in inline objects, utility

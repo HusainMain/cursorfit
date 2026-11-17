@@ -9,6 +9,7 @@
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, extname, basename, resolve, relative } from 'node:path';
+import { breakTie } from './rank.mjs';
 
 const SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '.next', '.nuxt', '.svelte-kit', 'out',
@@ -609,6 +610,33 @@ const FAMILIES = [
 // another family; it can never be the answer to "which cursor should my site have".
 const MODIFIERS = new Set(['magnetic']);
 
+// What each family can do at a control. The base state layer makes link/button/text
+// mandatory for all of them; `label` and `media` are the two extras a family adds.
+// This is not decoration: a near-tie is broken by which family does more when the pointer
+// lands on something, because "which cursor looks nicest" is not a question the code can
+// answer and "which cursor notices a button" is.
+const STATES = {
+  'css-static': [],
+  dot: ['link', 'button', 'text'],
+  'dot-ring': ['link', 'button', 'text'],
+  'state-label': ['link', 'button', 'text', 'label'],
+  magnetic: ['link', 'button', 'text'],
+  'blend-difference': ['link', 'button', 'text'],
+  trail: ['link', 'button', 'text'],
+  'mask-reveal': ['link', 'button', 'text', 'media'],
+  'shader-ripple': ['link', 'button', 'text'],
+};
+
+const siteSupports = {
+  link: controlCounts.links > 0,
+  button: controlCounts.buttons > 0,
+  text: controlCounts.inputs + controlCounts.textareas > 0,
+  label: controlCounts.links + controlCounts.buttons > 0,
+  media: mediaCount + cssBackgroundImages > 0,
+};
+
+const stateCount = (id) => (STATES[id] || []).filter((s) => siteSupports[s]).length;
+
 const gateNotes = [];
 const blocked = new Set();
 const restricted = new Map();
@@ -670,6 +698,7 @@ const ranking = FAMILIES.map((f) => {
     tier: f.tier,
     jsLines: f.js,
     fit: round(product * 100),
+    states: stateCount(f.id),
     modifier: MODIFIERS.has(f.id),
     blocked: blocked.has(f.id),
     primaryOnly: restricted.has(f.id),
@@ -681,6 +710,14 @@ const ranking = FAMILIES.map((f) => {
   const rank = (r) => (r.blocked ? 2 : r.modifier ? 1 : 0);
   return rank(a) - rank(b) || b.fit - a.fit;
 });
+
+// A fit gap under ~2.5 points is noise - the bands are heuristics, and 93 against 91 is not
+// a preference for 93. Inside that band the tie goes to the family that reacts to more of the
+// controls this site actually has, and the swap is recorded so the report can show it.
+//
+// Same tier only, and never a blocked or alternative-only family. The rule lives in
+// scripts/rank.mjs so test/tiebreak.mjs can pin each condition down.
+const tieBreak = breakTie(ranking);
 
 // ----------------------------------------------------------------------------- signature
 
@@ -718,7 +755,7 @@ if (!hasCustomCursor && /mousemove/.test(codeText)) {
 
 const profile = {
   tool: 'cursorfit',
-  version: '0.1.1',
+  version: '0.1.2',
   generatedAt: new Date().toISOString(),
   root,
   scanned: { files: files.length, styles: styleFiles.length, markup: markupFiles.length, code: codeFiles.length },
@@ -768,6 +805,7 @@ const profile = {
   scores,
   motionSignature: signature,
   ranking,
+  tieBreak,
   gates: gateNotes,
   gaps,
   notes,
@@ -806,9 +844,10 @@ if (!flags.has('--json')) {
   lines.push(`MOTION      ${signature}`);
   lines.push('');
   lines.push('FAMILIES');
+  lines.push('            own layer only; every JS family also ships the ~100-line shared core');
   for (const r of ranking) {
     const tag = r.blocked ? 'BLOCKED' : r.modifier ? 'MODIFIER' : r.primaryOnly ? 'ALT ONLY' : '';
-    lines.push(`${String(r.fit).padStart(3)}  ${r.id.padEnd(17)} ${r.tier}  ${String(r.jsLines).padStart(3)}js  ${tag}`);
+    lines.push(`${String(r.fit).padStart(3)}  ${r.id.padEnd(17)} ${r.tier}  ${String(r.jsLines).padStart(3)}js  ${r.states} state${r.states === 1 ? '' : 's'}  ${tag}`);
     if (flags.has('--explain') && r.misses.length) {
       lines.push(`     misses: ${r.misses.join(' · ')}`);
     }
@@ -821,7 +860,10 @@ if (!flags.has('--json')) {
   const pick = ranking.find((r) => r.eligible && !r.primaryOnly);
   if (pick) {
     lines.push('');
-    lines.push(`PICK        ${pick.id} (${pick.tier}, ~${pick.jsLines} lines) — fit ${pick.fit}`);
+    lines.push(`PICK        ${pick.id} (${pick.tier}, ~${pick.jsLines} own lines) — fit ${pick.fit}`);
+  }
+  if (tieBreak) {
+    lines.push(`TIE-BREAK   ${tieBreak.reason}`);
   }
   if (gaps.length) {
     lines.push('');

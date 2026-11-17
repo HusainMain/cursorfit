@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cursorfit — cursor assets preview</title>
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="shapes.css">
 <style>
   :root {
@@ -65,7 +66,6 @@
     background: var(--cf-color);
     transition: transform var(--cf-settle) var(--cf-ease), background-color var(--cf-settle) var(--cf-ease), border-color var(--cf-settle) var(--cf-ease);
   }
-  .cf-cursor[data-state="hover"] .cf-cursor__mark { transform: scale(var(--cf-hover, 4.6)); }
 
   .switcher { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
   .switcher button {
@@ -214,11 +214,7 @@
   stage.addEventListener('mouseleave', () => {
     stage.classList.remove('live');
     el.dataset.visible = 'false';
-    el.dataset.state = '';
   });
-
-  // highlight the hoverable card in the stage
-  stage.addEventListener('mouseover', () => { el.dataset.state = ''; });
 
   buttons.forEach((b) => {
     b.addEventListener('click', () => {

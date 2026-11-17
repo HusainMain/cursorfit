@@ -393,7 +393,9 @@ try {
   const afterTap = await centreOf(touchPage, selector);
 
   if (!afterTap) {
-    record('touch', 'skip', 'no cursor element in the DOM');
+    // The recipe bails before creating anything when the pointer is coarse. No element is
+    // the correct outcome; the `element` check above already caught a cursor that never ran.
+    record('touch', 'pass', 'no cursor element created on a touch device');
   } else if (visible(afterTap) && !visible(beforeTap)) {
     record('touch', 'fail', 'the cursor appeared after a tap — no coarse-pointer guard');
   } else {
@@ -409,7 +411,7 @@ try {
 
   const rmFirst = await centreOf(rmPage, selector);
   if (!rmFirst) {
-    record('reduced-motion', 'skip', 'no cursor element in the DOM');
+    record('reduced-motion', 'pass', 'no cursor element created under prefers-reduced-motion');
   } else {
     await rmPage.mouse.move(683, 384);
     await sleep(120);

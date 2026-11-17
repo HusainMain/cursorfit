@@ -20,3 +20,6 @@ desktop.ini
 # editors
 .vscode/
 .idea/
+
+# generated from references/recipes.md by test/extract.mjs
+test/_generated/
