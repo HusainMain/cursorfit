@@ -185,11 +185,54 @@ forcing it into the nearest row.
 
 ## Confidence
 
-Every profile carries a confidence value:
+Confidence measures **how much of the site the audit could read**, not how strongly the
+analysis feels. Every axis now carries its own level, and so does the profile as a whole.
 
-- **high** — all five axes scored with ≥2 evidence items
-- **medium** — one axis inferred, stated as such
-- **low** — two or more axes `UNKNOWN`; the recommendation becomes conditional and must say
-  which answer would change it
+| Level | Meaning | How to quote it |
+|---|---|---|
+| **high** | every input came from a parsed stylesheet or markup file, and no blind spot touches the axis | the number, as-is |
+| **medium** | a blind spot touches the axis: inline styles, utility classes, CSS-in-JS, component internals | a band of ±5, plus one clause naming the blind spot |
+| **low** | nothing readable was found for the axis | not at all — it becomes a gap-fill question |
 
-Never present a low-confidence profile as settled.
+The blind spots the audit reports, and what each one costs:
+
+- **inline style attributes** — values set in JSX objects never reach a stylesheet, so padding,
+  radius and type sizes can be wrong in either direction.
+- **utility-class lists** — Tailwind composes values at build time; the class name is not the
+  value.
+- **CSS-in-JS** — styled-components and emotion generate rules at runtime; a static scan finds
+  nothing to measure.
+- **PascalCase component tags** — `<Button>` is counted at the call site; what it renders is
+  unknown, and the state-label recipe depends on what it renders.
+- **no stylesheet** — every CSS-derived axis is a guess.
+
+Rules:
+
+1. One `medium` axis makes the whole profile `medium`. Two `low` axes make it `low`.
+2. A `low` axis is `UNKNOWN`, and `UNKNOWN` becomes a question — never a median, never a
+   plausible-looking guess.
+3. `medium` is the normal state on a modern app. Say so plainly instead of dropping the
+   number: "35, ±5 — the audit couldn't read 220 inline styles."
+4. Confidence never goes up because the numbers look coherent. Coherence is not evidence.
+5. An override (see `SKILL.md`, stage 4) is allowed to raise confidence, but only for the
+   axis the cited file actually touches, and only with a file path.
+
+## What a score is not
+
+The five axes are a **decision-support device**. They exist so two runs on the same repo
+produce the same ranking, and so a recommendation can be argued with. They are not a
+measurement of design quality, and the fit bands are not laws of nature: nobody has shown
+that a site scoring 85 in expressiveness is better served by a trail than one scoring 65.
+
+What is defensible:
+
+- the evidence items, each one a fact from the repo;
+- the direction of each band (a trail on a form-first page really does cost more than it
+  gives);
+- the gates, which are structural — glass really does break difference blending.
+
+What is not defensible:
+
+- quoting a fit of 94 as if it were a percentage of anything;
+- treating a 2-point gap between families as meaningful;
+- overriding a gate because the score was close.

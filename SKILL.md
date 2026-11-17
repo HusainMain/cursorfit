@@ -2,10 +2,10 @@
 name: cursorfit
 description: Choose and build the right custom cursor for a website. Audits a repo's palette, typography, motion and layout, scores the site's design character on five axes, then picks one cursor family and implements it using the site's own design tokens. Use when someone asks for a custom cursor, mouse follower, cursor trail, magnetic cursor, blend-mode cursor, dot-and-ring cursor, or asks which cursor style fits their site. Reads a repo or CSS files; no live URL needed.
 license: MIT
-compatibility: No runtime dependencies. Node 18+ only for the optional scripts/audit.mjs helper; the audit can also be done by reading files directly. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
+compatibility: No runtime dependencies. Node 18+ for the optional scripts/audit.mjs reader; Playwright is optional and used only by scripts/verify.mjs for the browser pass. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
 metadata:
   author: makeityours
-  version: "0.1.0"
+  version: "0.1.1"
 ---
 
 # cursorfit
@@ -34,12 +34,13 @@ feels modern and minimal" is not evidence and must never appear in the output.
 | Stage | Output |
 |---|---|
 | 0. Read the repo | framework, file map, existing cursor code |
-| 1. Audit | `cursorfit.json` — tokens, type, motion, density, controls |
-| 2. Score | five axes, each with evidence; motion signature |
+| 1. Audit | `cursorfit.json` — tokens, type, motion, density, controls, and a coverage report |
+| 1b. Read | the components, inline styles and utility classes the audit could not read |
+| 2. Score | five axes, each with evidence and a confidence level; motion signature |
 | 3. Gap-fill | at most three questions, each with a default |
-| 4. Decide | one primary + two alternates, each with its disadvantage |
+| 4. Decide | one primary + two alternates, each with its disadvantage; overrides allowed with evidence |
 | 5. Build | files written into the repo, wired into the entry point |
-| 6. Verify | static gate checks; what couldn't be checked is declared |
+| 6. Verify | greps, the build, and a browser pass with `scripts/verify.mjs` |
 | 7. Report | the format in `references/recommendation.md` |
 
 Do not skip from stage 1 to stage 4. The scoring is what stops the answer from being taste
@@ -69,9 +70,38 @@ It is a static reader. It opens no browser and sends no network request. It extr
 dependencies, colour tokens, font stacks, keyframes, easings, durations, spacing, control
 counts, existing cursor code, and whether the accessibility guards already exist.
 
+It counts `<Button>` and `<Link>` as well as `<button>` and `<a>`, and it reads a coverage
+block: how many stylesheets and markup files it parsed, how many inline styles, utility-class
+lists and CSS-in-JS files it could not read, and which five files are worth opening first. A
+score is only as good as that coverage, so read `coverage` before reading `scores`.
+
 If the helper can't run, do the same extraction by hand using the signal table in
 `references/audit.md`. Every signal in that table maps to a scoring input, so skipping one
 means that axis becomes `UNKNOWN` rather than guessed.
+
+## Stage 1b — Read what the audit couldn't
+
+Static analysis has a known blind spot list, and pretending otherwise is how a profile gets
+confident about a site it half-read. Open the files in `coverage.hotspots` and answer three
+questions for each:
+
+1. **What padding, radius and type size are actually rendered?** Inline styles and utility
+   classes hold values the stylesheet scan never saw.
+2. **Do the component wrappers change the structure?** A `<Button>` may render a `<div>` with
+   a click handler, not a `<button>`. That changes the state-label recipe, which hooks
+   `data-cursor` onto a control.
+3. **Is there a layout or stacking context the audit could not see?** Sticky wrappers,
+   `overflow: hidden` sections, `isolation: isolate`, `backdrop-filter` — any of these can
+   move what the cursor sits above.
+
+Rules for this pass:
+
+- Read only the hotspots plus the entry point and layout shell. Not the whole repo.
+- If a hotspot changes a measured value by more than ~20%, record the corrected value and say
+  in the report that it came from reading, not from the script.
+- If a hotspot can't be resolved (generated styles, a build-time theme), downgrade the
+  affected axis to `medium` and say which file caused it.
+- Never re-run the audit to make a number nicer. The script's output is evidence, not a draft.
 
 ## Stage 2 — Score
 
@@ -93,6 +123,9 @@ Rules:
    restrained cursor; it's telling you a loud one would be the only loud thing on the page.
 3. **The motion signature is measured, not felt.** Record the actual easing curves, the
    median duration, the keyframe count, and whether anything springs or overshoots.
+4. **Every score carries a confidence.** `high`, `medium` or `low`, from the audit's coverage
+   block. A medium score is quoted as a band, not a number. A low score is not quoted at all —
+   it becomes a gap-fill question. Full rules in `references/profile.md`.
 
 ## Stage 3 — Gap-fill
 
@@ -128,6 +161,20 @@ Each alternate carries its disadvantage in the same breath, not in a footnote:
 or accessibility-critical, say so — then still offer the lowest-risk option and its cost,
 because the person asked for a cursor and refusing outright helps nobody.
 
+**You may override the ranking, but never silently.** The numbers are decision support, not a
+measurement, and the audit does not know what it could not read. An override is allowed when
+the coverage pass found something the script missed — a real interaction pattern, a component
+that changes the control structure, a stacking context the CSS scan couldn't see. To claim one,
+state all four:
+
+1. the family the audit ranked first and its fit,
+2. the specific evidence that changes it, with a file path or a measured value,
+3. the family you are choosing instead,
+4. what the reader loses by taking the override.
+
+An override with no file path is taste. Taste is allowed in the last mile — size, easing, the
+exact label — never in the choice of family.
+
 ## Stage 5 — Build
 
 Complete implementations for every family live in `references/recipes.md`. Copy the recipe,
@@ -160,15 +207,34 @@ this skill's folder at runtime.
 
 ## Stage 6 — Verify
 
-Run the static checks in `references/gating.md`. They are greps, not opinions: `pointer-events`,
-`position: fixed`, `aria-hidden`, coarse-pointer guard, reduced-motion guard, no `transition`
-on `transform`, hide on `mouseleave`, blend-context check.
+Three levels, in order. Each one catches what the previous one can't.
 
-Then the build must still pass: `npm run build` or `tsc --noEmit`. A cursor that breaks the
-build is not shipped.
+**1. Greps.** Run the static checks in `references/gating.md`. They are greps, not opinions:
+`pointer-events`, `position: fixed`, `aria-hidden`, coarse-pointer guard, reduced-motion
+guard, no `transition` on `transform`, hide on `mouseleave`, blend-context check.
 
-If a browser is available, check it at 1366×768 and 390×844. If not, the report says
-`NOT_TESTED: rendered appearance` in those words. Never imply you saw it.
+**2. Build.** `npm run build` or `tsc --noEmit`. A cursor that breaks the build is not shipped.
+
+**3. Browser.** Greps prove the code says the right things; they cannot prove the cursor
+works. If Playwright is available, run the harness:
+
+```bash
+node scripts/verify.mjs http://localhost:3000 --cursor .cf-cursor --json verify.json
+```
+
+It opens the page and checks what a grep cannot: the element exists and is visible, it has
+`pointer-events: none`, it lags then converges, hover changes its state, a click still reaches
+the control underneath, a route change doesn't spawn a second one, the console stays clean, a
+tap doesn't make it appear, and `prefers-reduced-motion` disables the follow. Nine checks,
+each one a failure this skill has seen in the wild.
+
+Playwright is the only optional dependency in the package. If it isn't installed, or the page
+can't be served, do the same nine checks by hand at 1366×768 and 390×844 — and if you don't,
+the report says `NOT_TESTED: rendered behaviour` in those words. Never imply you saw it.
+
+A skipped check is not a pass. `verify.mjs` prints skips separately for that reason: it means
+the page didn't expose enough to test, and the report has to say which check was skipped and
+why.
 
 ## Stage 7 — Report
 
@@ -180,6 +246,11 @@ at** and **what is deliberately disabled**.
 - **Code is not the render.** The audit reads source. A `backdrop-filter`, a stacking
   context, or a `transform` on an ancestor can change what the cursor looks like, and source
   won't show it.
+- **Static analysis only sees what it can parse.** Styling can live in inline objects, utility
+  classes resolved at build time, CSS-in-JS, or component internals. The audit counts what it
+  missed, names the files worth opening, and lowers confidence — it does not paper over the gap.
+- **Browser verification needs a browser.** `scripts/verify.mjs` requires Playwright and a
+  running page. Without it, behaviour stays `NOT_TESTED`, and the report must say so.
 - **Scores are heuristics, not measurements.** They rank families against a site. They do
   not predict conversion, taste, or whether the client's boss likes it.
 - **No live URL.** By design — a link would let the skill skip the repo, and the repo is

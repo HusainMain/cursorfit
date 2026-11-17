@@ -96,9 +96,56 @@ Count in markup (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.html`):
 - `data-cursor` occurrences (existing per-element cursor labels)
 - `onMouseMove` / `mousemove` listeners (existing pointer logic that may conflict)
 
+Count both spellings. `<button>` and `<Button>`, `<a>` and `<Link>`, `<img>` and `<Image>` are
+the same thing to a visitor and different things to a regex. A Next app can hide every control
+from a lowercase-only scan, which is why the audit reports `componentTags` separately — it tells
+you how much of the count came from a component call site whose internals were never seen.
+
+Also count CSS `background-image: url(...)`. A hero built from background images is media for
+the purpose of a reveal even though it never appears in the markup.
+
 A page with 40 links and 2 buttons is a reading page with navigation. A page with 12 buttons
 and 3 inputs is a tool. The state machine should be sized to the controls that actually exist —
 a `view` state with nothing to attach it to is dead code.
+
+## Coverage
+
+Counts are only as good as what the reader could parse, so the audit reports its own limits:
+
+| Field | Meaning |
+|---|---|
+| `inlineStyles` | `style={{…}}` / `style="…"` attributes — values that never reach a stylesheet |
+| `utilityClassLists` | class lists with two or more Tailwind-shaped tokens |
+| `cssInJsFiles` | files importing styled-components or emotion, or using `styled.` / `css\`` |
+| `componentTags` | PascalCase controls and media found at the call site |
+| `cssBackgroundImages` | `url(...)` in `background` / `background-image`, excluding data URIs |
+| `hotspots` | the five files most likely to hold the unread styling |
+| `blindSpots` | human-readable list of what the scan could not read |
+
+These feed the confidence on each axis. They do not change the scores — a site with 177 inline
+styles is still that site. They change how loudly the score may be stated.
+
+## What the audit cannot know
+
+Two categories, handled differently.
+
+**Blind spots** — the code exists but the parser can't read it. These are counted, reported, and
+must be opened by hand before the score is trusted:
+
+- inline styles and utility classes (values live in JSX or in the build)
+- CSS-in-JS (rules are generated at runtime)
+- component internals (`<Button>` may render a `<div>` with a click handler)
+- runtime layout: sticky wrappers, `overflow: hidden`, `isolation: isolate`, `backdrop-filter`
+- media queries that change the whole layout at a breakpoint the scan doesn't render
+
+**True unknowns** — facts no repo holds. These become gap-fill questions, never silent
+assumptions:
+
+- who the audience is
+- whether the cursor may carry personality
+- brand colours that exist only in a Figma file
+- whether a client will reject "playful"
+- whether the site is about to be redesigned
 
 ## Existing cursor code
 
@@ -120,13 +167,3 @@ Three outcomes:
 - **Found and broken** → run the repair checklist in `gating.md`, then decide whether the
   family is still right. Repair is usually cheaper and the report should say so.
 - **Found and working** → the job is a tuning pass, not a replacement. Say that.
-
-## What the audit cannot know
-
-These become gap-fill questions, never silent assumptions:
-
-- who the audience is
-- whether the cursor may carry personality
-- brand colours that exist only in a Figma file
-- whether a client will reject "playful"
-- whether the site is about to be redesigned

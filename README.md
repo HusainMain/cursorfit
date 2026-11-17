@@ -32,35 +32,41 @@ round: audit first, verdict second, code last.
 ## What it actually does
 
 ```
-read the repo  →  score five axes  →  gate the impossible  →  pick one  →  implement  →  verify
+read the repo  →  close the gaps  →  score  →  gate  →  pick one  →  implement  →  verify
 ```
 
 1. **Reads** — framework, files, colour tokens, type stack, radii, spacing, keyframes,
-   transitions, control count, media count, and any cursor code already there.
-2. **Scores** five axes, each one requiring evidence from the code:
+   transitions, control count, media count, and any cursor code already there. Component tags
+   count too: `<Button>`, `<Link>` and `<Image>` are not invisible.
+2. **Closes the gap** — reports what it could not read (inline styles, utility classes,
+   CSS-in-JS, component internals) and names the five files worth opening. Those get read by
+   hand before anything is scored.
+3. **Scores** five axes, each one requiring evidence from the code:
    `restrained ↔ expressive` · `precise ↔ organic` · `dense ↔ airy` · `calm ↔ energetic` ·
-   `product ↔ editorial`.
-3. **Measures** the motion signature — keyframe count, median transition, overshoot curves,
+   `product ↔ editorial` — each with a confidence level.
+4. **Measures** the motion signature — keyframe count, median transition, overshoot curves,
    scroll-driven animations, reduced-motion support, touch guards.
-4. **Gates** — hard constraints that outrank the score. Glass panels kill blend modes. An
+5. **Gates** — hard constraints that outrank the score. Glass panels kill blend modes. An
    unused GPU package kills the shader. Zero images kills the reveal.
-5. **Asks** at most three questions, only where the code genuinely can't answer, each with a
+6. **Asks** at most three questions, only where the code genuinely can't answer, each with a
    default so "I don't know" still produces a decision.
-6. **Builds** the winner as `cursor.css` + `cursor.js`, or a React component, wired to the
-   site's existing tokens. Then it checks its own work with a grep list and a live pass.
+7. **Builds** the winner as `cursor.css` + `cursor.js`, or a React component, wired to the
+   site's existing tokens. Then it checks its own work: greps, the build, and a real browser.
 
 Nothing is invented at build time. The colour is a token that already exists. The speed comes
 from the site's measured transitions. The size comes from its spacing.
 
 ## A real run
 
-Run against a dark, animation-heavy AI product landing page — 85 files, 46 controls, 24
-keyframes, median transition 200ms.
+Run against a dark, animation-heavy AI product landing page — 82 files, 38 controls, 24
+keyframes, median transition 200ms, and 177 inline styles the stylesheet scan could not read.
 
 ```
 profile     expressive 91 · organic 57 · airy 35 · energetic 94 · editorial 70
 motion      24 keyframes · median transition 200ms · 0 overshoot · scroll-driven
             reduced-motion: present · touch guard: absent
+coverage    2 stylesheets · 38 markup files · 177 inline styles · 369 utility-class lists
+confidence  medium on all five axes — the app hides much of its styling in JSX
 ```
 
 | Family | Fit | Verdict |
@@ -136,13 +142,15 @@ survive both light and dark sections.
 **`assets/preview.html`** — open it to move a real pointer over all seven shapes and feel the
 hotspots. The screenshot at the top is that page.
 
-**`scripts/audit.mjs`** — the only code that runs. Reads a repo and writes `cursorfit.json`:
+**`scripts/audit.mjs`** — the reader. Reads a repo and writes `cursorfit.json`:
 
 ```bash
 node scripts/audit.mjs path/to/repo --out cursorfit.json
 ```
 
 Static, offline, zero dependencies, ~300ms. It never opens a browser and never makes a request.
+`scripts/verify.mjs` is the other half: it needs a browser and does the opposite — nine checks
+driven against a live page.
 
 ## What it refuses to do
 
@@ -160,6 +168,54 @@ Nine anti-slop rules live in `references/gating.md`. The short version:
 There is also a ten-step repair list for sites that already have a broken cursor, because most
 sites asking this question have one.
 
+## Where it can't see
+
+Static analysis is a partial view of a modern app, and a partial view that looks complete is
+worse than an honest one. The audit now emits a coverage block, and every axis it feeds carries
+a confidence level.
+
+| Blind spot | Why it exists | What happens |
+|---|---|---|
+| inline styles | values set in JSX objects never reach a stylesheet | counted, flagged, files named |
+| utility classes | Tailwind resolves values at build time | counted; `cssDepth` drops to partial |
+| CSS-in-JS | styled-components and emotion generate rules at runtime | detected; axis confidence drops |
+| component tags | `<Button>` is counted at the call site, not its internals | counted and flagged |
+| no stylesheet | nothing to measure | every CSS axis becomes a question |
+
+A `medium` score is quoted as a band and named with its cause. A `low` score isn't quoted at
+all — it becomes a question. The agent then opens the flagged files and reads what the parser
+couldn't, because a script that says "confident" about half a page is the exact failure this
+section exists to prevent.
+
+## Verification — greps are not enough
+
+`references/gating.md` has nine static rules, and they catch the common breakages. They cannot
+catch the interesting ones. So `scripts/verify.mjs` drives a real browser and checks nine
+behaviours:
+
+| Check | Catches |
+|---|---|
+| `element` | wrong selector, element never rendered |
+| `pointer-events` | the cursor swallows every click |
+| `follow` | no lag, or lag that never converges |
+| `hover-state` | no state hook, or a hook on the wrong control |
+| `click-through` | a wrapper or overlay eats the click |
+| `route-change` | a second instance after navigation |
+| `console` | errors the cursor introduced |
+| `touch` | `cursor: none` leaking onto a phone |
+| `reduced-motion` | the follow animation still running |
+
+```bash
+npm i -D playwright && npx playwright install chromium   # once, optional
+node scripts/verify.mjs http://localhost:3000 --cursor .cf-cursor --json verify.json
+```
+
+It falls back to Edge or Chrome if bundled Chromium was never downloaded. Playwright is the
+only optional dependency in the package, and it is used by this script alone.
+
+A skipped check is not a pass. It means the page didn't expose enough to test, and the report
+has to name the skip instead of claiming the behaviour.
+
 ## The repo
 
 ```
@@ -173,9 +229,11 @@ references/gating.md      the nine rules and the repair checklist
 references/recommendation.md   the report shape, plus a worked example
 references/credits.md     what came from where
 scripts/audit.mjs         repo → cursorfit.json
+scripts/verify.mjs        the page → nine browser checks
 assets/shapes.css         seven silhouettes, zero images
 assets/cursors/*.svg      four image cursors with hotspots
 assets/preview.html       open this to see both sets
+test/fixture.html         a correct implementation, used to test the verifier
 ```
 
 `SKILL.md` sits at the root on purpose: that is the one hard requirement for the Agensi
@@ -184,15 +242,22 @@ package format, and it also means a plain `git clone` into a skills folder works
 ## Limits — read this before you judge it
 
 - **The audit is proven; the recipes aren't.** The scoring has been run on two real repos and
-  gave answers a designer would defend. The nine implementations are rewritten from published
-  skills and have not yet been applied to a live site. That's next, and it's where bugs will
-  appear.
+  a Next-style fixture, and gave answers a designer would defend. The nine implementations are
+  rewritten from published skills and have not yet been applied to a live site. That's next,
+  and it's where bugs will appear.
 - **Source is not the render.** A stacking context, a fixed header, or a transform on `body`
   can change what the cursor looks like. The code cannot see that.
-- **The scores are heuristics.** They rank families against a site. They don't predict taste,
-  and they're not a substitute for looking at the thing.
-- **Static audit only, by design.** No live URL means rendered states stay `NOT_TESTED` unless
-  you run a browser yourself. The report says so in those words.
+- **Static analysis only sees what it can parse.** Styling can live in inline objects, utility
+  classes resolved at build time, CSS-in-JS, or component internals. The audit counts what it
+  missed, names the files worth opening, and lowers confidence — it doesn't paper over the gap.
+- **The scores are heuristics.** They rank families against a site and make two runs
+  consistent. They don't predict taste, and a fit of 94 is not 94% of anything. Medium is the
+  normal state on a modern app, and it is stated rather than hidden.
+- **Browser verification needs a browser.** `verify.mjs` requires Playwright and a running
+  page. Without it, behaviour stays `NOT_TESTED` — and the report says so in those words.
+- **No live URL is read.** By design — a link would let the skill skip the repo, and the repo
+  is where the tokens are. Rendered behaviour comes from `verify.mjs` against your own dev
+  server, not from the audit.
 - **T3 is a hook, not a shader.** `shader-ripple` wires a uniform into a renderer your repo
   already runs. It does not ship a shader.
 - **Geometry, not artwork.** No paper planes, stickers, or drawn characters. A cursor that

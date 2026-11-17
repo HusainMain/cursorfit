@@ -41,6 +41,11 @@ Two axes badly missed lands around 30. One axis badly missed lands around 55. Ev
 inside lands at 100 — which means "no axis rules it out", not "guaranteed good". Fit is a
 rank, not a probability.
 
+It is also not a measurement of quality. Nobody has shown that a site at 85 expressiveness is
+better served by a trail than one at 65 — the bands encode "designed for", not "proven on".
+Read the ordering as a consistent argument you can push back on. Two things outrank it, in
+this order: a hard gate, and an override with a file path.
+
 Read `[lo, hi]` as "this family was designed for sites scoring in this range".
 
 | Family | Expressive | Organic | Airy | Energy | Editorial |

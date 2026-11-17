@@ -49,6 +49,9 @@ scroll-driven: <yes/no> · reduced-motion: <present/absent> · touch guard: <pre
 
 **MISSING** <what the repo couldn't tell us, and the default used>
 
+**CONFIDENCE** expressive <high|medium|low> · organic <…> · airy <…> · energy <…> · editorial <…>
+**COVERAGE** <n> stylesheets, <n> markup files, <n> blind spots · <the two that matter>
+
 ## Decision
 
 > **<family>** — <what it looks like in one line>
@@ -77,6 +80,10 @@ scroll-driven: <yes/no> · reduced-motion: <present/absent> · touch guard: <pre
 | reduced motion | nothing |
 
 **It will not** — <the honest limitation of this family on this site, one sentence>
+
+**Override** *(include only if you changed the ranking)*
+Audit ranked `<family>` first at fit `<n>`. Chose `<family>` instead because `<evidence, with a
+file path or a measured value>`. What that costs: `<the downside the audit's pick did not have>`.
 
 ## Alternates
 
@@ -138,7 +145,16 @@ how a recommendation becomes a sales pitch.
 either dishonest or hasn't understood the family.
 
 **Never claim rendered verification you didn't perform.** `static` is the honest word for
-"greps and build passed".
+"greps and build passed". `rendered` requires `scripts/verify.mjs` to have run, or the nine
+checks done by hand, with skips named.
+
+**Scores are decision support, never a percentage of anything.** Quote a score when it is
+`high` confidence. At `medium`, quote it as a band and name the blind spot that caused it. At
+`low`, don't quote it — ask.
+
+**An override appears in the report, not in the reasoning.** If the ranking was changed, the
+audit's pick, the override, the evidence and the cost are all visible to the reader. A silent
+override is indistinguishable from a bug.
 
 **Confidence must match the profile.** A low-confidence profile cannot produce a verdict with
 no condition. Write it as: "If <answer> is true, `<family>`. If not, `<family>`."

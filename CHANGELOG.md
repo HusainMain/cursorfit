@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.1.1 — 2026-11-18
+
+Three corrections after review. No family, recipe or gate was added or removed — the fixes are
+to what the audit can see, how confidently it says it, and what verification proves.
+
+### Fixed — component-named elements were invisible
+
+The control and media counters matched lowercase HTML only. A Next app writes `<Image>`,
+`<Button>` and `<Link>`, so the audit could report zero controls on a modern project while
+looking precise. It now counts both spellings and records which one it found.
+
+Evidence from a Next-style fixture (`<Button>`, `<Link>`, five `<Image>`, styled-components):
+
+| | before | after |
+|---|---|---|
+| controls | 0 | 2 |
+| media | 0 | 5 |
+| `mask-reveal` | blocked | eligible |
+| gap reported | "no interactive targets found" | none |
+
+Two related fixes: CSS `background-image` now counts toward the media gate, and test or
+tooling artifacts (`.playwright-mcp`, `playwright-report`, `test-results`, `storybook-static`)
+are excluded from the scan. The second one matters — a copy of a page inside `.playwright-mcp`
+was double-counting 269 files on the validation repo.
+
+Re-run on the validation repo: 82 files, 38 controls, same pick (`state-label`, fit 93), same
+gates. Excluding the artifacts changed the counts by 19% and did not change the verdict.
+
+### Added — coverage and confidence
+
+The audit now emits a `coverage` block: stylesheets, markup files, inline style attributes,
+utility-class lists, CSS-in-JS files, component tags found, CSS background images, and the five
+files most likely to hold styling it could not read. Every axis carries
+`confidence: high | medium | low` with a note naming the blind spot that caused it.
+
+`SKILL.md` gained a stage between audit and score: open the flagged files, correct any value
+that moves by more than ~20%, and drop the axis to `medium` if it can't be resolved.
+
+### Added — browser verification
+
+`scripts/verify.mjs` — nine checks a grep cannot make: element present, `pointer-events`, follow
+lag and convergence, hover state, click-through, duplicate instances after a route change,
+console errors, touch, and reduced-motion. Falls back to Edge or Chrome when bundled Chromium
+is missing, so a machine with a browser already installed can run it without the download.
+
+Tested against two pages:
+
+| Page | Result |
+|---|---|
+| a correct implementation (state-label with all three guards) | 9 passed, 0 failed |
+| `assets/preview.html`, which has no hover state, no touch guard and no reduced-motion handling | 5 passed, 4 failed — all four real |
+
+`references/gating.md` now defines `rendered` as "verify.mjs passed, or the nine checks done by
+hand with skips named", and says a skipped check is not a pass.
+
+### Changed — scores are decision support, not measurement
+
+`references/profile.md` gained a "What a score is not" section, `references/families.md` says
+plainly that the fit bands are "designed for", not "proven on", and `SKILL.md` allows an
+override of the ranking — but only with a file path, and only when the report shows the audit's
+pick, the override, the evidence and the cost together.
+
+Confidence is now per axis and per profile, with quoting rules: `high` quotes the number,
+`medium` quotes a ±5 band plus the cause, `low` is not quoted at all.
+
+---
+
 ## 0.1.0 — 2026-11-18
 
 First public release.

@@ -1,0 +1,105 @@
+<!doctype html>
+<!--
+  cursorfit - verification fixture.
+
+  A deliberately correct implementation of the state-label family: fine-pointer only,
+  one element, pointer-events none, touch bail-out, reduced-motion bail-out. It exists to
+  prove scripts/verify.mjs can pass and not only fail. Do not copy this as production code;
+  the recipes in references/recipes.md are richer.
+
+    python -m http.server 8080
+    node scripts/verify.mjs http://localhost:8080/test/fixture.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cursorfit verify fixture</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --cf-color: #00f0ff; --cf-size: 12px; --cf-settle: 280ms; --cf-ease: cubic-bezier(.23,1,.32,1); }
+  body { margin: 0; min-height: 200vh; background: #0a0b0d; color: #e9e9e9; font: 15px/1.6 system-ui, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 80px 24px; }
+  h1 { font-size: 40px; margin: 0 0 16px; }
+  a, button { color: #00f0ff; font: inherit; background: none; border: 1px solid #2a2d33; border-radius: 8px; padding: 10px 18px; margin-right: 12px; }
+  p { max-width: 60ch; color: #9aa0a8; }
+
+  /* only on a precise pointer */
+  @media (pointer: fine) {
+    html.cf-on, html.cf-on a, html.cf-on button, html.cf-on body { cursor: none; }
+    html.cf-on input, html.cf-on textarea { cursor: text; }
+  }
+
+  .cf-cursor { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; opacity: 0; will-change: transform; }
+  .cf-cursor[data-visible="true"] { opacity: 1; }
+  .cf-cursor__mark {
+    display: grid; place-items: center;
+    width: var(--cf-size); height: var(--cf-size);
+    border-radius: 50%; background: var(--cf-color);
+    color: #050505; font-size: 11px; font-weight: 700;
+    transition: transform var(--cf-settle) var(--cf-ease), background-color var(--cf-settle) var(--cf-ease);
+  }
+  .cf-cursor[data-state="view"] .cf-cursor__mark {
+    width: calc(var(--cf-size) * 7);
+    height: calc(var(--cf-size) * 7);
+    background: #00f0ff;
+    transform: none;
+  }
+  .cf-cursor[data-state="view"] .cf-cursor__mark::after { content: "View"; }
+</style>
+</head>
+<body>
+<main>
+  <h1>A page with a cursor that behaves</h1>
+  <p>This fixture exists to test the verifier, not to be pretty. It implements the state-label
+     recipe with all three guards: fine-pointer only, touch bail-out, reduced-motion bail-out.</p>
+  <p><a href="#work">See the work</a><button type="button">Start a project</button></p>
+  <p><a href="#more">Another link</a></p>
+</main>
+
+<div class="cf-cursor" aria-hidden="true" data-state="" data-visible="false">
+  <span class="cf-cursor__mark"></span>
+</div>
+
+<script>
+(() => {
+  const fine = matchMedia('(pointer: fine)');
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  if (!fine.matches) return;              // no cursor on touch devices
+
+  const html = document.documentElement;
+  const el = document.querySelector('.cf-cursor');
+  html.classList.add('cf-on');
+
+  let tx = 0, ty = 0, x = 0, y = 0, started = false, raf = 0;
+  const lerp = still.matches ? 1 : 0.16;
+
+  const tick = () => {
+    x += (tx - x) * lerp;
+    y += (ty - y) * lerp;
+    el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%,-50%)`;
+    raf = requestAnimationFrame(tick);
+  };
+
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    tx = e.clientX; ty = e.clientY;
+    if (!started) { x = tx; y = ty; started = true; }
+    el.dataset.visible = 'true';
+    if (!raf) raf = requestAnimationFrame(tick);
+  }, { passive: true });
+
+  const label = (on) => { el.dataset.state = on ? 'view' : ''; };
+  document.addEventListener('pointerover', (e) => {
+    if (e.target.closest('a, button, [data-cursor]')) label(true);
+  });
+  document.addEventListener('pointerout', (e) => {
+    if (e.target.closest('a, button, [data-cursor]')) label(false);
+  });
+
+  addEventListener('pointerleave', () => { el.dataset.visible = 'false'; });
+  still.addEventListener('change', () => location.reload());
+})();
+</script>
+</body>
+</html>

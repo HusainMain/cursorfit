@@ -153,12 +153,45 @@ npm run build     # or: npx tsc --noEmit
 A cursor that breaks the build is not shipped. If the project has no build step, open the HTML
 file and confirm the `<script>` is present and `defer`red.
 
+## Browser verification
+
+The greps above prove the code *says* the right things. They cannot prove it works. A
+`pointer-events: none` on the wrong element still swallows clicks, and a reduced-motion block
+that targets the wrong query still animates.
+
+`scripts/verify.mjs` drives a real browser and checks nine things a grep cannot:
+
+| Check | Catches |
+|---|---|
+| `element` | wrong selector, element never rendered |
+| `pointer-events` | the cursor swallows every click |
+| `follow` | no lag, or lag that never converges |
+| `hover-state` | no state hook, or a hook on the wrong control |
+| `click-through` | a wrapper or overlay eats the click |
+| `route-change` | a second instance after navigation |
+| `console` | errors the cursor introduced |
+| `touch` | `cursor: none` leaking onto a phone |
+| `reduced-motion` | the follow animation still running |
+
+```bash
+npm i -D playwright && npx playwright install chromium   # once
+node scripts/verify.mjs http://localhost:3000 --cursor .cf-cursor --json verify.json
+```
+
+It falls back to Edge or Chrome if the bundled Chromium was never downloaded, so a machine
+with a browser already installed can run it without the 150MB download. Exit code 1 means at
+least one check failed.
+
+A skipped check is not a pass. It means the page did not expose enough to test — no visible
+control, no cursor element, no observable state change — and the report must name the skip
+instead of claiming the behaviour.
+
 ## What "verified" means here
 
 | Level | Meaning |
 |---|---|
 | **static** | greps pass, build passes, files are wired into the entry point |
-| **rendered** | a browser confirmed the cursor at 1366×768 and 390×844 |
+| **rendered** | `verify.mjs` passed, or the nine checks were done by hand at 1366×768 and 390×844 with every skip named |
 | **not tested** | neither of the above |
 
 A report may say `rendered` only if a browser was actually driven. Source inspection is

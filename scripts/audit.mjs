@@ -8,11 +8,14 @@
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join, extname, basename, resolve } from 'node:path';
+import { join, extname, basename, resolve, relative } from 'node:path';
 
 const SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '.next', '.nuxt', '.svelte-kit', 'out',
   'coverage', 'vendor', '.cache', '.vercel', '.turbo', '.output', 'public/build',
+  // test and tooling artifacts: they duplicate real components and inflate every count
+  '.playwright-mcp', 'playwright-report', 'test-results', 'storybook-static', 'cypress',
+  '.nyc_output', '.parcel-cache',
 ]);
 
 const CODE_EXT = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.vue', '.svelte', '.astro']);
@@ -394,18 +397,43 @@ const grain = /noise|grain|texture/i.test(cssText);
 
 // ----------------------------------------------------------------------------- controls
 
+// Element names are not always lowercase. A Next app writes <Image>, a design system writes
+// <Button>, a router writes <Link>. Counting only `<button` reports zero controls on exactly
+// the modern projects this skill is most likely to meet, so count both spellings and record
+// which one was found — the report can then say how much of the page it actually saw.
+
+const tally = (re) => count(markupText, re);
+
+const nativeTags = {
+  buttons: tally(/<button[\s>]/g),
+  links: tally(/<a[\s>]/g),
+  inputs: tally(/<input[\s>]/g),
+  textareas: tally(/<textarea[\s>]/g),
+};
+
+const componentTags = {
+  buttons: tally(/<(?:Button|Btn|CTA)[\s>]/g),
+  links: tally(/<(?:Link|NavLink|RouterLink)[\s>]/g),
+  inputs: tally(/<(?:Input|TextField|TextInput)[\s>]/g),
+  textareas: tally(/<(?:TextArea|Textarea)[\s>]/g),
+  images: tally(/<(?:Image|Img|NextImage)[\s>]/g),
+};
+
 const controlCounts = {
-  buttons: count(markupText, /<button[\s>]/g),
-  links: count(markupText, /<a[\s>]/g),
-  inputs: count(markupText, /<input[\s>]/g),
-  textareas: count(markupText, /<textarea[\s>]/g),
-  images: count(markupText, /<img[\s>]/g),
-  canvases: count(markupText, /<canvas[\s>]/g),
-  videos: count(markupText, /<video[\s>]/g),
-  paragraphs: count(markupText, /<p[\s>]/g),
+  buttons: nativeTags.buttons + componentTags.buttons,
+  links: nativeTags.links + componentTags.links,
+  inputs: nativeTags.inputs + componentTags.inputs,
+  textareas: nativeTags.textareas + componentTags.textareas,
+  images: tally(/<img[\s>]/g) + componentTags.images + tally(/<picture[\s>]/g),
+  canvases: tally(/<canvas[\s>]/g),
+  videos: tally(/<video[\s>]/g),
+  paragraphs: tally(/<p[\s>]/g),
 };
 const controlTotal = controlCounts.buttons + controlCounts.links + controlCounts.inputs + controlCounts.textareas;
 const formRatio = controlTotal ? (controlCounts.inputs + controlCounts.textareas) / controlTotal : 0;
+
+// A background-image is media for the purpose of a reveal, but it never appears in the markup.
+const cssBackgroundImages = count(cssText, /background(?:-image)?\s*:[^;}]*url\(\s*['"]?(?!data:)/g);
 const mediaCount = controlCounts.images + controlCounts.videos + controlCounts.canvases;
 
 // ----------------------------------------------------------------------------- existing cursor
@@ -482,6 +510,87 @@ const scores = {};
   scores.editorial = { value: round(terms.reduce((a, [w, v]) => a + w * v, 0) * 100), evidence: terms.map((t) => t[2]) };
 }
 
+// ----------------------------------------------------------------------------- coverage
+//
+// The audit reads source. Source is not the render, and on a modern project it is not even the
+// whole source: styles can live in inline objects, in utility classes resolved at build time,
+// or in a CSS-in-JS runtime. Whatever could not be read is recorded here, and every axis that
+// depended on it loses confidence. A score must never look certain when half the styling was
+// invisible.
+
+const inlineStyles = tally(/\bstyle=/g);
+
+const classLists = [...markupText.matchAll(/className\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map((m) => m[1] ?? m[2]);
+const UTILITY = /^(?:flex|grid|block|inline|inline-flex|hidden|absolute|relative|fixed|sticky|p[xytblr]?-|m[xytblr]?-|gap-|w-|h-|min-h-|max-w-|text-|bg-|border|rounded|shadow|opacity-|z-|items-|justify-|space-)/;
+const utilityClassLists = classLists.filter((s) => s.split(/\s+/).filter((t) => UTILITY.test(t)).length >= 2).length;
+
+const cssInJsFiles = markupFiles
+  .filter((f) => /\.(jsx?|tsx?|vue|svelte)$/i.test(f))
+  .filter((f) => /styled\.[a-zA-Z]|styled\(|createGlobalStyle|@emotion\/|from ['"]styled-components|css`/.test(read(f))).length;
+
+const componentTotal = Object.values(componentTags).reduce((a, b) => a + b, 0);
+
+// Naming the files is the difference between "coverage is partial" and something an agent can
+// act on. These are the five files most likely to hold the styling the audit could not read.
+const hotspots = markupFiles
+  .map((f) => {
+    const t = read(f);
+    return { file: relative(root, f), inlineStyles: count(t, /\bstyle=/g), classLists: count(t, /className\s*=/g) };
+  })
+  .filter((h) => h.inlineStyles > 5 || h.classLists > 15)
+  .sort((a, b) => b.inlineStyles - a.inlineStyles || b.classLists - a.classLists)
+  .slice(0, 5);
+
+const blindSpots = [];
+if (!styleFiles.length) blindSpots.push('no stylesheet found - every CSS-derived value is a guess');
+if (inlineStyles > 20) blindSpots.push(`${inlineStyles} inline style attributes - set in markup, invisible to the stylesheet scan`);
+if (utilityClassLists > 20) blindSpots.push(`${utilityClassLists} utility-class lists - values are resolved at build time, not in a stylesheet`);
+if (cssInJsFiles) blindSpots.push(`CSS-in-JS in ${cssInJsFiles} files - rules are generated at runtime`);
+if (componentTotal) blindSpots.push(`${componentTotal} PascalCase component tags - counted at the call site, internals unseen`);
+
+const coverage = {
+  stylesheets: styleFiles.length,
+  markupFiles: markupFiles.length,
+  inlineStyles,
+  utilityClassLists,
+  cssInJsFiles,
+  componentTags,
+  cssBackgroundImages,
+  hotspots,
+  blindSpots,
+};
+
+const depthRank = { none: 0, partial: 1, full: 2 };
+const cssDepth = !styleFiles.length
+  ? 'none'
+  : cssInJsFiles || utilityClassLists > 40 || inlineStyles > 60
+    ? 'partial'
+    : 'full';
+const markupDepth = !markupFiles.length ? 'none' : componentTotal > Math.max(3, controlTotal * 0.3) ? 'partial' : 'full';
+const worstDepth = (...d) => d.reduce((a, b) => (depthRank[a] <= depthRank[b] ? a : b));
+const LEVEL = { full: 'high', partial: 'medium', none: 'low' };
+
+const axisDepth = {
+  expressive: worstDepth(cssDepth),
+  organic: worstDepth(cssDepth),
+  airy: worstDepth(cssDepth, markupDepth),
+  energy: worstDepth(cssDepth),
+  editorial: worstDepth(cssDepth, markupDepth),
+};
+
+for (const [axis, d] of Object.entries(axisDepth)) {
+  scores[axis].confidence = {
+    level: LEVEL[d],
+    basis: 'static',
+    note:
+      d === 'full'
+        ? `${styleFiles.length} stylesheet(s), ${markupFiles.length} markup file(s), no blind spots`
+        : d === 'partial'
+          ? blindSpots.slice(0, 2).join('; ') || 'partial coverage'
+          : 'nothing readable for this axis',
+  };
+}
+
 // ----------------------------------------------------------------------------- families
 
 const FAMILIES = [
@@ -521,8 +630,8 @@ if (!hasGpu) {
   block('shader-ripple', 'gpu-pipeline',
     'no imported GPU/shader pipeline — a package.json entry without an import does not count');
 }
-if (mediaCount < 4) {
-  block('mask-reveal', 'media-count', `only ${mediaCount} images/media to reveal`);
+if (mediaCount + cssBackgroundImages < 4) {
+  block('mask-reveal', 'media-count', `only ${mediaCount} images/media and ${cssBackgroundImages} CSS background images to reveal`);
 }
 if (hoverTargets < 3) {
   block('state-label', 'hover-groups', `only ${hoverTargets} hoverable controls to label`);
@@ -593,6 +702,14 @@ if (!controlCounts.buttons && !controlCounts.links) gaps.push('no interactive ta
 if (!hasReducedMotion) gaps.push('no prefers-reduced-motion block — one must be added with the cursor');
 if (!hasCoarseGuard) gaps.push('no coarse-pointer guard — one must be added with the cursor');
 if (hasCustomCursor) gaps.push('existing cursor code found — run the repair checklist before replacing');
+
+const notHigh = Object.entries(scores).filter(([, s]) => s.confidence.level !== 'high').map(([k]) => k);
+if (notHigh.length) {
+  gaps.push(`confidence below high on ${notHigh.join(', ')} — read the named components and inline styles before trusting the score`);
+}
+if (Object.values(scores).some((s) => s.confidence.level === 'low')) {
+  gaps.push('at least one axis is a guess — ask the user before building on it');
+}
 if (!hasCustomCursor && /mousemove/.test(codeText)) {
   notes.push('pointer tracking exists in the codebase but no cursor element was found — check it is not a half-built cursor');
 }
@@ -601,7 +718,7 @@ if (!hasCustomCursor && /mousemove/.test(codeText)) {
 
 const profile = {
   tool: 'cursorfit',
-  version: '0.1.0',
+  version: '0.1.1',
   generatedAt: new Date().toISOString(),
   root,
   scanned: { files: files.length, styles: styleFiles.length, markup: markupFiles.length, code: codeFiles.length },
@@ -646,6 +763,7 @@ const profile = {
     grain,
   },
   controls: { ...controlCounts, total: controlTotal, formRatio: round(formRatio, 2), mediaCount },
+  coverage,
   existingCursor: { found: hasCustomCursor, signals: existingCursor },
   scores,
   motionSignature: signature,
