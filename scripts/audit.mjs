@@ -827,10 +827,10 @@ if (!flags.has('--json')) {
       return `${label.padEnd(9)} ${bits.join(' · ')}`;
     };
     lines.push('');
-    const built = decision.reach
-      ? 'safe is built unless you ask for the reach'
-      : 'safe is built; nothing louder clears the bar';
-    lines.push(`DECISION    fit is a floor (80) · ${built}`);
+    const ask = decision.reach
+      ? 'ask which slot before writing files'
+      : 'no reach clears the bar · ask before writing files';
+    lines.push(`DECISION    fit is a floor (80) · ${ask}`);
     lines.push(cell('SAFE', decision.safe));
     lines.push(cell('REACH', decision.reach));
     lines.push(cell('FALLBACK', decision.fallback));

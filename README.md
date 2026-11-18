@@ -52,9 +52,11 @@ read the repo  →  close the gaps  →  score  →  gate  →  pick one  →  i
    default so "I don't know" still produces a decision.
 7. **Offers** three named slots instead of a gallery — **safe** (highest fit), **reach** (the
    most expressive family at most one tier up that still fits within 10 points), and
-   **fallback** (the zero-JS answer). One of them gets built.
-8. **Builds** the safe pick — or the reach, if you ask for it — as `cursor.css` + `cursor.js`,
-   or a React component, wired to the site's existing tokens. Every build starts with the same
+   **fallback** (the zero-JS answer). One of them gets built, after the owner picks.
+8. **Confirms** the slot before writing a file: safe or reach, each with what it costs. Safe is
+   the recommendation and the default when there is no one to ask — never the silent choice.
+9. **Builds** the chosen slot as `cursor.css` + `cursor.js`, or a React component, wired to the
+   site's existing tokens. Every build starts with the same
    state layer — link opens a ring, button becomes a capsule, a field hands the caret back — so
    no family ever ships a mark that ignores what it is pointing at. Then it checks its own work:
    greps, the build, and a real browser.
@@ -77,7 +79,7 @@ confidence  medium on all five axes — the app hides much of its styling in JSX
 
 | Family | Fit | Verdict |
 |---|---:|---|
-| `blend-difference` | 98.8 | **alternate-only** — `backdrop-filter` glass creates a stacking context; difference blending cannot reach behind it |
+| `blend-difference` | 98.8 | **restricted** — `backdrop-filter` glass creates a stacking context; difference blending cannot reach behind it |
 | `state-label` | 98.5 | **safe** — dot + ring in the site's neon cyan, a word on hover |
 | `shader-ripple` | 98.5 | blocked — `three` is in `package.json` but never imported |
 | `magnetic` | 96.5 | modifier, not a family — applied to the buttons instead |

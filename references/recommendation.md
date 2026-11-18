@@ -106,8 +106,12 @@ pick did not have>`.
 
 **FALLBACK — `<family>`** (T0, fit `<n>`) <what it looks like>. **Disadvantage:** <the real cost.>
 
-Only one is built. The safe is the default; say "build the reach instead" and the reach is what
-gets written.
+## Pick one
+
+**Safe — `<family>`.** <what you get>. **Cost:** <what it costs>.
+**Reach — `<family>`.** <what you get>. **Cost:** <what it costs>.
+
+Nothing is written until this is answered. Say "safe", "reach", or "you pick".
 
 ## Build
 
@@ -149,13 +153,18 @@ for `<group>`.
 "Dot and ring in the site's cyan, with View labels on project cards — it matches the neon
 editorial register without adding a second animation system to a page that already has one."
 
-**The three slots are one answer, not a menu.** Safe is what you build; reach is the stretch;
-fallback is the floor. Present them in that order and never as equals. If you would not ship
-the reach yourself, say so in its disadvantage.
+**The three slots are one answer, not a menu.** Safe is the recommendation; reach is the
+stretch; fallback is the floor. Present them in that order and never as equals. If you would not
+ship the reach yourself, say so in its disadvantage.
 
-**Say which slot is installed.** Three slots are three offers, not a package. One line says
-only the safe is written; the reader should never discover the difference by looking at their
-repo. The audit prints it above the slot list, and the report repeats it under the same block.
+**Ask before you build, and never build on silence.** One message with both slots, each cost in
+the same breath, is a question. Three slots listed and a file quietly written is not. If nobody
+is there to answer, build safe and say the ask was skipped — an unasked build is a default, not
+a decision the reader made.
+
+**Say which slot is installed — after the build.** Three slots are three offers, not a package.
+Before the build the line names what you recommend; after it, the same line names what was
+actually written. The reader should never discover the difference by looking at their repo.
 
 **A reach may be empty.** When every louder eligible family gives up more than 10 fit points,
 write `none` and the reason in one clause. Do not invent a second family to fill the slot, and

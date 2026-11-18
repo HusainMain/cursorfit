@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "cursorfit",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Choose and build the right custom cursor for a website: audit the repo's palette, typography, motion and layout, score its design character, then implement one cursor family in the site's own tokens. No runtime dependencies.",
   "author": {
     "name": "makeityours"

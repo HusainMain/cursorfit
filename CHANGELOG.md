@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.0 — 2026-11-18
+
+### Changed — the skill asks before it writes
+
+0.2.1 fixed the wording by stating that safe is installed unless you ask for the reach. That was
+honest about the behaviour and wrong about the behaviour itself: a site owner who asked for a
+cursor recommendation got a diff before they got a choice.
+
+Stage 4 now ends with an ask. Both slots go out in one message, each with its cost in the same
+sentence, and no file is written until the answer comes back. Safe stays the recommendation, and
+the default when there is nobody to ask — which the report must name as a skipped ask, never as
+consent.
+
+This is a minor bump rather than a patch because the pipeline's last step changed: an agent
+following the skill now stops for an answer instead of writing files.
+
+The CLI line changes with it:
+
+| Before | After |
+|---|---|
+| `safe is built unless you ask for the reach` | `ask which slot before writing files` |
+| `safe is built; nothing louder clears the bar` | `no reach clears the bar · ask before writing files` |
+
+`recommendation.md` gains a "Pick one" block so the written report ends with the question rather
+than the build. The "say which slot is installed" rule from 0.2.1 survives, scoped to after the
+build.
+
+No selection behaviour changed. Ties, the fit floor, the tier cap and the reach slack are
+untouched.
+
 ## 0.2.1 — 2026-11-18
 
 ### Fixed — three offers looked like three installs

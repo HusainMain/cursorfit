@@ -224,7 +224,7 @@ The audit does not return a list. It returns three named offers, and only one is
 
 | Slot | Rule | What it is for |
 |---|---|---|
-| **safe** | highest fit among eligible families; ties go to the cheaper tier, then the family with more states, then alphabetical order | the one to ship if the owner says nothing |
+| **safe** | highest fit among eligible families; ties go to the cheaper tier, then the family with more states, then alphabetical order | the one you recommend, and the default if nobody answers |
 | **reach** | highest expressive floor among eligible families at most one tier above safe and within 10 fit points of it | the answer to "what if I want more" |
 | **fallback** | `css-static` when it is eligible and unused, otherwise the cheapest remaining eligible family | the answer to "nothing moving, thanks" |
 

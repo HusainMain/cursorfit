@@ -1,11 +1,11 @@
 ---
 name: cursorfit
-description: Choose and build the right custom cursor for a website. Audits a repo's palette, typography, motion and layout, scores the site's design character on five axes, then picks one cursor family and implements it using the site's own design tokens. Use when someone asks for a custom cursor, mouse follower, cursor trail, magnetic cursor, blend-mode cursor, dot-and-ring cursor, or asks which cursor style fits their site. Reads a repo or CSS files; no live URL needed.
+description: Choose and build the right custom cursor for a website. Audits a repo's palette, typography, motion and layout, scores the site's design character on five axes, then recommends one cursor family and implements the one you choose, using the site's own design tokens. Use when someone asks for a custom cursor, mouse follower, cursor trail, magnetic cursor, blend-mode cursor, dot-and-ring cursor, or asks which cursor style fits their site. Reads a repo or CSS files; no live URL needed.
 license: MIT
 compatibility: No runtime dependencies. Node 18+ for the optional scripts/audit.mjs reader; Playwright is optional and used only by scripts/verify.mjs for the browser pass. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
 metadata:
   author: makeityours
-  version: "0.2.1"
+  version: "0.3.0"
 ---
 
 # cursorfit
@@ -39,7 +39,8 @@ feels modern and minimal" is not evidence and must never appear in the output.
 | 2. Score | five axes, each with evidence and a confidence level; motion signature |
 | 3. Gap-fill | at most three questions, each with a default |
 | 4. Decide | safe, reach and fallback — each with its disadvantage; overrides allowed with evidence |
-| 5. Build | files written into the repo, wired into the entry point |
+| 4b. Ask | safe or reach, cost attached to each; nothing is written until it is answered |
+| 5. Build | the chosen slot, written into the repo and wired into the entry point |
 | 6. Verify | greps, the build, and a browser pass with `scripts/verify.mjs` |
 | 7. Report | the format in `references/recommendation.md` |
 
@@ -149,7 +150,7 @@ If the answer changes nothing about the recommendation, it wasn't a question.
 Score every family in `references/families.md` against the profile, then apply the hard gates.
 Fit is a floor of 80, not a rank, and the output is three named slots rather than a menu:
 
-- **safe** — the highest-fit eligible family. This is what gets built if the owner says nothing.
+- **safe** — the highest-fit eligible family. The one you recommend first.
 - **reach** — the most expressive eligible family at most one tier above safe and within 10 fit
   points of it. The "what if I want more" answer. It may be empty.
 - **fallback** — `css-static` when it is eligible, otherwise the cheapest family left. The
@@ -164,8 +165,9 @@ Each slot carries its disadvantage in the same breath, not in a footnote:
 > layer over every project image, and it will look broken on any card whose image fails to
 > load.
 
-A menu hands the decision back to the person who asked for it. Three slots do not — they are an
-answer, a stretch, and a floor.
+A menu hands the decision back to the person who asked for it: nine families, no opinion.
+Three slots do not — they are an answer, a stretch, and a floor. Asking "safe or reach" is not
+that menu; it is one question with two ranked answers.
 
 **"Keep the native cursor" is a valid verdict.** When the site is reading-heavy, form-heavy,
 or accessibility-critical, say so — then still offer the lowest-risk slot and its cost, because
@@ -190,9 +192,33 @@ case, name it instead of presenting the pick as settled.
 An override with no file path is taste. Taste is allowed in the last mile — size, easing, the
 exact label — never in the choice of family.
 
+### Ask before you write a file
+
+Nothing is implemented until the owner picks. Put both slots in one message, each with its cost
+attached:
+
+> **Safe — state-label.** Fit 98.5. Four states, ~85 own lines, no canvas. It reads as
+> considered rather than memorable; on a page this expressive the cursor will not be the thing
+> anyone talks about afterwards.
+>
+> **Reach — trail.** Fit 93.1, one tier up. Motion is what this page sells, so a trail earns
+> its keep — and it leaves a smear over text while scrolling, which some readers hate.
+
+If the reach is empty, say so and offer safe against the fallback instead. "A cursor that
+reacts quietly" versus "no custom cursor" is still a real choice.
+
+Build safe when the owner says "you pick". Build safe when there is nobody to ask — a headless
+run, a CI job, an agent with no human in the loop — and say in the report that the ask was
+skipped and safe was taken by default. Silence is not consent: never describe an unasked build
+as agreed.
+
+Ask once per run, not once per file. A rerun against an installed cursor starts from "is this
+still the right family", which is a different question from "which slot do I build".
+
 ## Stage 5 — Build
 
-Complete implementations for every family live in `references/recipes.md`. Copy the recipe,
+Do not start here until Stage 4's ask has an answer or a stated default. Complete
+implementations for every family live in `references/recipes.md`. Copy the recipe,
 then change only what the profile says to change.
 
 Non-negotiables:
