@@ -1,5 +1,108 @@
 # Changelog
 
+## 0.2.0 — 2026-11-18
+
+### Changed — the ranking was measuring the wrong thing
+
+Three critique passes were run against the 0.1.2 selection. Two findings were adopted, one was
+verified false against the code, and one was rejected on principle. What survived:
+
+The score up to 0.1.2 was `100 × Π (1 − 0.45 × min(1, d/30))`. Four problems, all real.
+
+1. **The product punished families for having opinions.** It multiplied a penalty for every axis
+   a family declares, so a family judged on two axes out-scored one judged on five at identical
+   per-axis quality. `css-static` was judged on two, `dot` on three, everything else on five. The
+   catalogue was rewarding silence.
+2. **Confidence was computed and never used.** An axis the reader could not parse was scored as
+   if it were in range, so an unreadable site came out looking quiet.
+3. **Fit was used as the ranker.** `fit 100` means "no axis rules it out" — a pass, not a quality
+   signal — so ranking on it ranked band geometry, not suitability.
+4. **Ties fell to array order.** The family list is ordered simplest-first, so at equal fit the
+   earliest family won by position.
+
+### The model now
+
+- `fit = 100 × (Π factor) ^ (1 / active)`. The geometric mean is normalised by the number of
+  axes the family was actually judged on, so a two-axis family and a five-axis family land on
+  the same scale.
+- A `low`-confidence axis is **skipped**, not scored as a pass. If every active axis was skipped,
+  fit is `null` and the family is not offered.
+- Fit is a **floor of 80**, never a ranker. `breakTie` and the 2.5-point noise band are deleted.
+
+### The output is three slots, not a primary and two alternates
+
+| Slot | Rule |
+|---|---|
+| **safe** | highest fit; ties go to the cheaper tier, then more states, then id |
+| **reach** | highest expressive floor at most one tier up, within 10 fit points of safe |
+| **fallback** | `css-static` when eligible, otherwise the cheapest remaining family |
+
+`css-static` is never safe or reach. Its bands are a strict subset of `dot`'s, so it can never
+out-fit it, and every JS family now ships a state layer the bitmap cannot. Its honest niche is
+"the buyer forbids JavaScript", a constraint a repo cannot reveal — so it is the fallback, and
+the safe pick the moment that constraint is stated.
+
+Two rules were added during the build, both found by the golden set rather than by a critique:
+
+- The reach was chosen on floor alone, so a family at 83.7 with three missed axes could be
+  offered while one at 95.8 with a single small miss was skipped. It now has to stay within
+  `REACH_FIT_SLACK = 10` of the safe fit.
+- At equal fit the order preferred *more states*, which could put a T3 shader in the safe slot.
+  Cost now comes first. Safe means low risk.
+
+### Added — a golden set
+
+Eight fixtures in `test/golden/`, with expectations written before the ranker was run against
+them, and `test/golden.mjs` to run them end to end. Four pass. Four are recorded as **known
+gaps** rather than tuned green:
+
+- **`fit-rewards-silence`** (agency-portfolio, photo-editorial, studio-showcase). Fit charges for
+  a miss and never rewards a family for having an opinion. `dot-ring`'s bands cover almost
+  anything, so it sits at or near 100 and wins by default; `state-label` requires expressive ≥ 55
+  and editorial ≥ 50 — a real view about these three sites — and loses for holding it.
+- **`reach-tier-cap`** (shader-hero). A reach may go one tier up, so T3 is unreachable when the
+  safe pick is T1, even on a repo that already imports `three` and where `shader-ripple` scores
+  exactly the floor of 80.
+
+A mismatch that is not listed as a gap fails the run, so a regression cannot hide behind the
+gap list.
+
+### Added — selection tests
+
+`test/selection.mjs` replaces `test/tiebreak.mjs`. 27 assertions: geometric-mean scale
+independence, active-axis counting, confidence skipping, the floor, the modifier rule,
+`css-static` exclusion, the safe tie-break, the reach slack and tier cap, and both empty pools.
+
+### Changed — the documents follow the code
+
+`families.md` describes the formula and the three slots, and the 90-line note is now explicitly a
+T1 budget, not a gate — the script has never had a line-count gate. `SKILL.md` Stage 4 is safe /
+reach / fallback. `recommendation.md` prints the three slots and drops the tie-break block.
+`behaviour.md` states that failure mode is a gate-level risk control, never a tie-break: a quiet
+failure is a bug that takes longer to notice.
+
+### Before and after, on the four validation repos
+
+| Repo | 0.1.2 | 0.2.0 safe / reach / fallback |
+|---|---|---|
+| BuildEx | `dot` 100 / `dot-ring` 82.7 / `css-static` 95.4 | `dot` 100 / **none** / `css-static` 95.4 |
+| ideabridge | `state-label` 98.5 / `trail` 93.1 / `dot-ring` 91.7 | unchanged |
+| IssueLens | `dot` 97.4 / `dot-ring` 96.8 / `css-static` 88.0 | unchanged |
+| husain-portfolio | `blend-difference` 97.5 / `trail` 83.3 / `dot` 85.2 | `blend-difference` 97.5 / `state-label` 94.2 / `dot` 85.2 |
+
+BuildEx loses its reach because 10 fit points is a real bound: `dot-ring` at 82.7 against a safe
+pick at 100 is a compromise, not a step up. husain-portfolio's reach moves from `trail` (83.3,
+outside the slack) to `state-label` (94.2, inside it). No safe pick changed on any of the four.
+
+### Verified
+
+- `node test/selection.mjs` — 27/27.
+- `node test/golden.mjs` — 4 match, 4 known gaps, no unrecorded mismatch.
+- `node test/extract.mjs` — the recipes are untouched and still extract to `cursor.css` 111
+  lines, `cursor.js` 101, `label.css` 28.
+- Four real repos audited. No live site was built from this version; rendered behaviour stays
+  `NOT_TESTED` until it is.
+
 ## 0.1.2 — 2026-11-18
 
 ### Fixed — every family looked the same

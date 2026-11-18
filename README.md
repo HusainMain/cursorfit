@@ -50,41 +50,45 @@ read the repo  →  close the gaps  →  score  →  gate  →  pick one  →  i
    unused GPU package kills the shader. Zero images kills the reveal.
 6. **Asks** at most three questions, only where the code genuinely can't answer, each with a
    default so "I don't know" still produces a decision.
-7. **Builds** the winner as `cursor.css` + `cursor.js`, or a React component, wired to the
-   site's existing tokens. Every build starts with the same state layer — link opens a ring,
-   button becomes a capsule, a field hands the caret back — so no family ever ships a mark
-   that ignores what it is pointing at. Then it checks its own work: greps, the build, and a
-   real browser.
+7. **Offers** three named slots instead of a gallery — **safe** (highest fit), **reach** (the
+   most expressive family at most one tier up that still fits within 10 points), and
+   **fallback** (the zero-JS answer). One of them gets built.
+8. **Builds** the safe pick — or the reach, if you ask for it — as `cursor.css` + `cursor.js`,
+   or a React component, wired to the site's existing tokens. Every build starts with the same
+   state layer — link opens a ring, button becomes a capsule, a field hands the caret back — so
+   no family ever ships a mark that ignores what it is pointing at. Then it checks its own work:
+   greps, the build, and a real browser.
 
 Nothing is invented at build time. The colour is a token that already exists. The speed comes
 from the site's measured transitions. The size comes from its spacing.
 
 ## A real run
 
-Run against a dark, animation-heavy AI product landing page — 82 files, 38 controls, 24
+Run against a dark, animation-heavy AI product landing page — 86 files, 38 controls, 25
 keyframes, median transition 200ms, and 177 inline styles the stylesheet scan could not read.
 
 ```
-profile     expressive 91 · organic 57 · airy 35 · energetic 94 · editorial 70
-motion      24 keyframes · median transition 200ms · 0 overshoot · scroll-driven
-            reduced-motion: present · touch guard: absent
-coverage    2 stylesheets · 38 markup files · 177 inline styles · 369 utility-class lists
+profile     expressive 92 · organic 57 · airy 35 · energetic 94 · editorial 70
+motion      25 keyframes · median transition 200ms · 0 overshoot · scroll-driven
+            reduced-motion: present · touch guard: present
+coverage    3 stylesheets · 39 markup files · 177 inline styles · 369 utility-class lists
 confidence  medium on all five axes — the app hides much of its styling in JSX
 ```
 
 | Family | Fit | Verdict |
 |---|---:|---|
-| `blend-difference` | 94 | **rejected as primary** — `backdrop-filter` glass creates a stacking context; difference blending cannot reach behind it |
-| `state-label` | 93 | **picked** — dot + ring in `--neon-cyan`, word on hover |
-| `shader-ripple` | 93 | blocked — `three` is in `package.json` but never imported |
-| `magnetic` | 91 | modifier, not a family — applied to the buttons instead |
-| `trail` | 70 | alternate |
-| `dot-ring` | 66 | alternate |
-| `css-static` | 30 | |
-| `dot` | 26 | |
+| `blend-difference` | 98.8 | **alternate-only** — `backdrop-filter` glass creates a stacking context; difference blending cannot reach behind it |
+| `state-label` | 98.5 | **safe** — dot + ring in the site's neon cyan, a word on hover |
+| `shader-ripple` | 98.5 | blocked — `three` is in `package.json` but never imported |
+| `magnetic` | 96.5 | modifier, not a family — applied to the buttons instead |
+| `trail` | 93.1 | **reach** — the T2 step up |
+| `dot-ring` | 91.7 | **fallback** — cheapest family still over the floor |
+| `dot` | 64.2 | under the floor of 80 |
+| `css-static` | 55.0 | under the floor of 80 |
 
-Two things to notice. The top scorer lost. And the cursor that shipped was not the most
-impressive one available — it was the one the site could carry.
+Two things to notice. The top scorer lost — not on score, on a stacking context it cannot see
+its way through. And the cursor that shipped was not the most impressive one available: it was
+the one the site could carry.
 
 ## Install
 
@@ -240,14 +244,16 @@ references/gating.md      the nine rules and the repair checklist
 references/recommendation.md   the report shape, plus a worked example
 references/credits.md     what came from where
 scripts/audit.mjs         repo → cursorfit.json
-scripts/rank.mjs          the tie-break rule, extracted so it can be tested
+scripts/rank.mjs          the selection rules, extracted so they can be tested
 scripts/verify.mjs        the page → eleven browser checks
 assets/shapes.css         seven silhouettes, zero images
 assets/cursors/*.svg      four image cursors with hotspots
 assets/preview.html       open this to see both sets
 test/states.html          the base state layer, driven in a browser
 test/shapes.html          all seven silhouettes through the same four states
-test/tiebreak.mjs         the ranking rule's edge cases, pinned down
+test/selection.mjs        the selection rules' edge cases, pinned down
+test/golden.mjs           eight fixture repos, run end to end
+test/golden/              the fixtures, and the expectations written before they ran
 test/fixture.html         a correct implementation, used to test the verifier
 test/extract.mjs          pulls the recipe code out of the docs so the test tests the docs
 ```
@@ -257,8 +263,8 @@ package format, and it also means a plain `git clone` into a skills folder works
 
 ## Limits — read this before you judge it
 
-- **The audit is proven; most of the recipes aren't.** The scoring has been run on two real
-  repos and a Next-style fixture, and gave answers a designer would defend. The nine
+- **The audit is proven; most of the recipes aren't.** The scoring has been run on five real
+  repos and eight golden fixtures, and gave answers a designer would defend. The nine
   implementations are rewritten from published skills and have not yet been applied to a live
   site. The exception is the base state layer: it is extracted from `references/recipes.md` by
   `test/extract.mjs` and driven in a browser, so what is tested is the code in the docs. The
@@ -269,8 +275,15 @@ package format, and it also means a plain `git clone` into a skills folder works
   classes resolved at build time, CSS-in-JS, or component internals. The audit counts what it
   missed, names the files worth opening, and lowers confidence — it doesn't paper over the gap.
 - **The scores are heuristics.** They rank families against a site and make two runs
-  consistent. They don't predict taste, and a fit of 94 is not 94% of anything. Medium is the
-  normal state on a modern app, and it is stated rather than hidden.
+  consistent. They don't predict taste, and a fit of 97 against a floor of 80 is not 97% of
+  anything. Medium is the normal state on a modern app, and it is stated rather than hidden.
+- **Fit rewards the family with the widest bands.** A family whose opinions are satisfiable
+  almost anywhere (`dot-ring`: expressive 30–80, airy 30–100) sits at or near 100 and wins by
+  default, while a narrower family loses for holding a view. `test/golden/` records this as a
+  known gap on three fixtures instead of hiding it.
+- **A reach cannot jump two tiers.** The same cap that stops a T3 being offered to a quiet site
+  means the GPU family is unreachable when the safe pick is T1 — even on a site that already
+  runs WebGL.
 - **Browser verification needs a browser.** `verify.mjs` requires Playwright and a running
   page. Without it, behaviour stays `NOT_TESTED` — and the report says so in those words.
 - **No live URL is read.** By design — a link would let the skill skip the repo, and the repo

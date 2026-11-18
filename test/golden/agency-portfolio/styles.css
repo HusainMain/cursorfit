@@ -1,0 +1,184 @@
+:root {
+  --paper: #f6f2ea;
+  --ink: #14120f;
+  --accent: #d4462f;
+  --accent-2: #1d5f5a;
+  --line: #d9d2c4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 17px/1.6 "Söhne", ui-sans-serif, system-ui, sans-serif;
+}
+
+.masthead {
+  min-height: 100vh;
+  padding: 96px 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.nav { display: flex; gap: 36px; }
+.nav a { color: var(--ink); text-decoration: none; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+h1 {
+  font-family: "Canela", Georgia, serif;
+  font-size: 7rem;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  margin: 0;
+  max-width: 16ch;
+  animation: reveal 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lede {
+  max-width: 48ch;
+  margin: 32px 0 0;
+  font-size: 1.25rem;
+  color: #4a453c;
+  animation: reveal 900ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.cta {
+  align-self: flex-start;
+  margin-top: 48px;
+  padding: 18px 32px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 320ms cubic-bezier(0.34, 1.56, 0.64, 1), color 320ms ease;
+}
+
+.cta:hover { background: var(--ink); color: var(--paper); }
+
+.works {
+  padding: 80px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 64px 48px;
+}
+
+.card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  filter: saturate(0.9);
+  transition: filter 320ms ease, transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card:hover img { filter: saturate(1); transform: scale(1.02); }
+
+.card h2 {
+  font-family: "Canela", Georgia, serif;
+  font-size: 2rem;
+  margin: 20px 0 8px;
+}
+
+.card p { color: #4a453c; margin: 0 0 12px; max-width: 44ch; }
+.card a { color: var(--accent); text-underline-offset: 4px; }
+
+.studio { padding: 96px 80px; max-width: 900px; }
+.studio h2 { font-family: "Canela", Georgia, serif; font-size: 3rem; margin: 0 0 24px; }
+.studio p { max-width: 60ch; margin: 0 0 32px; }
+
+.btn {
+  border: 1px solid var(--accent-2);
+  background: transparent;
+  color: var(--accent-2);
+  padding: 16px 28px;
+  border-radius: 999px;
+  font: inherit;
+  margin-right: 12px;
+  transition: background-color 320ms ease, color 320ms ease;
+}
+
+.btn:hover { background: var(--accent-2); color: var(--paper); }
+
+footer { padding: 64px 80px; border-top: 1px solid var(--line); }
+footer a { color: #4a453c; margin-right: 28px; text-decoration: none; }
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(48px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-48px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes clipUp {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes clipDown {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes blurIn {
+  from { opacity: 0; filter: blur(12px); }
+  to { opacity: 1; filter: blur(0); }
+}
+@keyframes lineGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -12px, 0); }
+}
+@keyframes rotateSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes underline {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); transform-origin: left; }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pulseRing {
+  0% { opacity: 0.6; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}

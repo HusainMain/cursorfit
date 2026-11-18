@@ -5,7 +5,7 @@ license: MIT
 compatibility: No runtime dependencies. Node 18+ for the optional scripts/audit.mjs reader; Playwright is optional and used only by scripts/verify.mjs for the browser pass. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
 metadata:
   author: makeityours
-  version: "0.1.2"
+  version: "0.2.0"
 ---
 
 # cursorfit
@@ -38,7 +38,7 @@ feels modern and minimal" is not evidence and must never appear in the output.
 | 1b. Read | the components, inline styles and utility classes the audit could not read |
 | 2. Score | five axes, each with evidence and a confidence level; motion signature |
 | 3. Gap-fill | at most three questions, each with a default |
-| 4. Decide | one primary + two alternates, each with its disadvantage; overrides allowed with evidence |
+| 4. Decide | safe, reach and fallback — each with its disadvantage; overrides allowed with evidence |
 | 5. Build | files written into the repo, wired into the entry point |
 | 6. Verify | greps, the build, and a browser pass with `scripts/verify.mjs` |
 | 7. Report | the format in `references/recommendation.md` |
@@ -146,31 +146,46 @@ If the answer changes nothing about the recommendation, it wasn't a question.
 
 ## Stage 4 — Decide
 
-Score every family in `references/families.md` against the profile, then apply the hard
-gates. `magnetic` is a modifier — it is added to the chosen family on one or two elements and
-can never be the primary. Output **one primary and two alternates**. Never a flat menu — a
-menu hands the decision back to the person who asked for it.
+Score every family in `references/families.md` against the profile, then apply the hard gates.
+Fit is a floor of 80, not a rank, and the output is three named slots rather than a menu:
 
-Each alternate carries its disadvantage in the same breath, not in a footnote:
+- **safe** — the highest-fit eligible family. This is what gets built if the owner says nothing.
+- **reach** — the most expressive eligible family at most one tier above safe and within 10 fit
+  points of it. The "what if I want more" answer. It may be empty.
+- **fallback** — `css-static` when it is eligible, otherwise the cheapest family left. The
+  answer to "nothing moving, thanks".
 
-> **Alternate B — mask reveal.** Strongest editorial fit of the three; it costs a canvas
+`magnetic` is a modifier: add it to one or two elements of whichever slot is built, never as a
+slot itself. Only one slot is ever built.
+
+Each slot carries its disadvantage in the same breath, not in a footnote:
+
+> **Reach — mask reveal.** Highest expressive floor of the eligible set; it costs a canvas
 > layer over every project image, and it will look broken on any card whose image fails to
 > load.
 
-**"Keep the native cursor" is a valid verdict.** When the site is reading-heavy, form-heavy,
-or accessibility-critical, say so — then still offer the lowest-risk option and its cost,
-because the person asked for a cursor and refusing outright helps nobody.
+A menu hands the decision back to the person who asked for it. Three slots do not — they are an
+answer, a stretch, and a floor.
 
-**You may override the ranking, but never silently.** The numbers are decision support, not a
+**"Keep the native cursor" is a valid verdict.** When the site is reading-heavy, form-heavy,
+or accessibility-critical, say so — then still offer the lowest-risk slot and its cost, because
+the person asked for a cursor and refusing outright helps nobody. An empty reach is the same
+honesty: it means no louder family still fits, not that the question went unanswered.
+
+**You may override the pick, but never silently.** The numbers are decision support, not a
 measurement, and the audit does not know what it could not read. An override is allowed when
 the coverage pass found something the script missed — a real interaction pattern, a component
-that changes the control structure, a stacking context the CSS scan couldn't see. To claim one,
-state all four:
+that changes the control structure, a stacking context the CSS scan couldn't see — or when the
+buyer states a constraint the repo cannot hold. To claim one, state all four:
 
-1. the family the audit ranked first and its fit,
+1. the slot the audit chose and its fit,
 2. the specific evidence that changes it, with a file path or a measured value,
-3. the family you are choosing instead,
+3. the slot you are replacing it with,
 4. what the reader loses by taking the override.
+
+The golden set in `test/golden/` records two places the model is known to be wrong: fit rewards
+the family with the widest bands, and a reach can never jump two tiers. If either decides the
+case, name it instead of presenting the pick as settled.
 
 An override with no file path is taste. Taste is allowed in the last mile — size, easing, the
 exact label — never in the choice of family.
@@ -193,9 +208,10 @@ Non-negotiables:
 - **Labels are the enhancement, not the state.** `[data-cursor]` adds a word on top of a
   state that already exists. If the build only reacts where the site was annotated, the state
   layer is missing.
-- **T1 family code stays under ~90 lines, on top of the shared core.** If the family's own
-  layer needs more, the family is wrong for the site. The core is ~100 lines once, because it
-  now carries the state layer for every family.
+- **T1 family code stays under ~90 lines, on top of the shared core.** That is a T1 promise,
+  not a rule for every tier: a T2 or T3 family is allowed to be long, because that is what the
+  tier is for. If a T1 family needs more than ~90 lines, the family is wrong for the site. The
+  core is ~100 lines once, because it now carries the state layer for every family.
 - **`cursor: none` is applied by JS after the first frame**, never in static CSS. If the
   script fails, the user keeps a working cursor.
 - **Mount once.** A cursor mounted per route gives you two, then three.
@@ -263,6 +279,13 @@ at** and **what is deliberately disabled**.
   running page. Without it, behaviour stays `NOT_TESTED`, and the report must say so.
 - **Scores are heuristics, not measurements.** They rank families against a site. They do
   not predict conversion, taste, or whether the client's boss likes it.
+- **Fit rewards the widest bands.** A family with opinions it can satisfy almost anywhere
+  (`dot-ring`: expressive 30–80, airy 30–100) sits at or near 100 and wins by default, while a
+  family with a narrower opinion loses for holding it. `test/golden/` records this as a known
+  gap rather than hiding it.
+- **A reach cannot jump two tiers.** The cap that stops a T3 being offered to a T1 site also
+  means the GPU family is unreachable on a site whose safe pick is cheap — even one that
+  already runs WebGL.
 - **No live URL.** By design — a link would let the skill skip the repo, and the repo is
   where the tokens are. The cost is that rendered states are unverified.
 - **T3 needs existing GPU dependencies.** A WebGPU shader is only offered when the repo

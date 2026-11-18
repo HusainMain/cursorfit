@@ -9,7 +9,7 @@
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, extname, basename, resolve, relative } from 'node:path';
-import { breakTie } from './rank.mjs';
+import { FAMILIES, MODIFIERS, STATES, FIT_FLOOR, fitFamily, isEligible, decide, brief } from './rank.mjs';
 
 const SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '.next', '.nuxt', '.svelte-kit', 'out',
@@ -594,39 +594,6 @@ for (const [axis, d] of Object.entries(axisDepth)) {
 
 // ----------------------------------------------------------------------------- families
 
-const FAMILIES = [
-  { id: 'css-static', tier: 'T0', js: 0, bands: { expressive: [0, 45], organic: [0, 100], airy: [0, 100], energy: [0, 55], editorial: [0, 100] } },
-  { id: 'dot', tier: 'T1', js: 25, bands: { expressive: [0, 60], organic: [0, 100], airy: [0, 100], energy: [0, 65], editorial: [0, 60] } },
-  { id: 'dot-ring', tier: 'T1', js: 45, bands: { expressive: [30, 80], organic: [0, 70], airy: [30, 100], energy: [25, 80], editorial: [0, 75] } },
-  { id: 'state-label', tier: 'T1', js: 85, bands: { expressive: [55, 100], organic: [0, 85], airy: [40, 100], energy: [40, 100], editorial: [50, 100] } },
-  { id: 'magnetic', tier: 'T1', js: 60, bands: { expressive: [40, 90], organic: [0, 100], airy: [0, 100], energy: [40, 100], editorial: [0, 65] } },
-  { id: 'blend-difference', tier: 'T1', js: 40, bands: { expressive: [60, 100], organic: [30, 85], airy: [20, 100], energy: [30, 90], editorial: [55, 100] } },
-  { id: 'trail', tier: 'T2', js: 90, bands: { expressive: [70, 100], organic: [30, 100], airy: [55, 100], energy: [65, 100], editorial: [40, 100] } },
-  { id: 'mask-reveal', tier: 'T2', js: 110, bands: { expressive: [75, 100], organic: [20, 100], airy: [50, 100], energy: [40, 95], editorial: [65, 100] } },
-  { id: 'shader-ripple', tier: 'T3', js: 150, bands: { expressive: [80, 100], organic: [30, 100], airy: [40, 100], energy: [60, 100], editorial: [50, 100] } },
-];
-
-// A modifier is not a cursor system. Magnetism is applied to one or two elements *on top of*
-// another family; it can never be the answer to "which cursor should my site have".
-const MODIFIERS = new Set(['magnetic']);
-
-// What each family can do at a control. The base state layer makes link/button/text
-// mandatory for all of them; `label` and `media` are the two extras a family adds.
-// This is not decoration: a near-tie is broken by which family does more when the pointer
-// lands on something, because "which cursor looks nicest" is not a question the code can
-// answer and "which cursor notices a button" is.
-const STATES = {
-  'css-static': [],
-  dot: ['link', 'button', 'text'],
-  'dot-ring': ['link', 'button', 'text'],
-  'state-label': ['link', 'button', 'text', 'label'],
-  magnetic: ['link', 'button', 'text'],
-  'blend-difference': ['link', 'button', 'text'],
-  trail: ['link', 'button', 'text'],
-  'mask-reveal': ['link', 'button', 'text', 'media'],
-  'shader-ripple': ['link', 'button', 'text'],
-};
-
 const siteSupports = {
   link: controlCounts.links > 0,
   button: controlCounts.buttons > 0,
@@ -678,46 +645,34 @@ if (hasGlass) {
 }
 
 const ranking = FAMILIES.map((f) => {
-  let product = 1;
-  const detail = [];
-
-  for (const [axis, [lo, hi]] of Object.entries(f.bands)) {
-    if (lo <= 0 && hi >= 100) continue; // no preference on this axis
-    const v = scores[axis].value;
-    const distance = Math.max(0, lo - v, v - hi);
-    if (distance === 0) continue;
-    // Each axis a family misses knocks 45% off, and the penalties compound: a family has to
-    // fit the whole site, not win on average.
-    const p = Math.min(1, distance / 30);
-    detail.push(`${axis} ${v} vs ${lo}–${hi}`);
-    product *= 1 - 0.45 * p;
-  }
-
+  const { fit, active, skipped, misses, missDistance } = fitFamily(scores, f);
   return {
     id: f.id,
     tier: f.tier,
+    tierRank: f.tierRank,
+    floor: f.floor,
     jsLines: f.js,
-    fit: round(product * 100),
+    fit,
+    active,
+    skipped,
+    missDistance,
     states: stateCount(f.id),
     modifier: MODIFIERS.has(f.id),
     blocked: blocked.has(f.id),
     primaryOnly: restricted.has(f.id),
     restrictedBecause: restricted.get(f.id) || null,
-    misses: detail,
-    eligible: !blocked.has(f.id) && !MODIFIERS.has(f.id),
+    misses,
+    eligible: isEligible(fit, f, blocked.has(f.id)),
   };
 }).sort((a, b) => {
-  const rank = (r) => (r.blocked ? 2 : r.modifier ? 1 : 0);
-  return rank(a) - rank(b) || b.fit - a.fit;
+  const rank = (r) => (r.blocked ? 3 : r.modifier ? 2 : r.eligible ? 0 : 1);
+  return rank(a) - rank(b) || (b.fit ?? -1) - (a.fit ?? -1) || a.id.localeCompare(b.id);
 });
 
-// A fit gap under ~2.5 points is noise - the bands are heuristics, and 93 against 91 is not
-// a preference for 93. Inside that band the tie goes to the family that reacts to more of the
-// controls this site actually has, and the swap is recorded so the report can show it.
-//
-// Same tier only, and never a blocked or alternative-only family. The rule lives in
-// scripts/rank.mjs so test/tiebreak.mjs can pin each condition down.
-const tieBreak = breakTie(ranking);
+// Fit is a floor, not a ranker (0.2.0). `safe` is the best fit among eligible families;
+// `reach` is the most ambitious one at most a tier above it. The rule lives in
+// scripts/rank.mjs so test/selection.mjs can pin each condition down.
+const decision = decide(ranking);
 
 // ----------------------------------------------------------------------------- signature
 
@@ -805,7 +760,13 @@ const profile = {
   scores,
   motionSignature: signature,
   ranking,
-  tieBreak,
+  decision: {
+    reason: decision.reason,
+    safe: brief(decision.safe),
+    reach: brief(decision.reach),
+    fallback: brief(decision.fallback),
+  },
+  fitFloor: FIT_FLOOR,
   gates: gateNotes,
   gaps,
   notes,
@@ -846,10 +807,12 @@ if (!flags.has('--json')) {
   lines.push('FAMILIES');
   lines.push('            own layer only; every JS family also ships the ~100-line shared core');
   for (const r of ranking) {
-    const tag = r.blocked ? 'BLOCKED' : r.modifier ? 'MODIFIER' : r.primaryOnly ? 'ALT ONLY' : '';
-    lines.push(`${String(r.fit).padStart(3)}  ${r.id.padEnd(17)} ${r.tier}  ${String(r.jsLines).padStart(3)}js  ${r.states} state${r.states === 1 ? '' : 's'}  ${tag}`);
-    if (flags.has('--explain') && r.misses.length) {
-      lines.push(`     misses: ${r.misses.join(' · ')}`);
+    const tag = r.blocked ? 'BLOCKED' : r.modifier ? 'MODIFIER' : r.primaryOnly ? 'RESTRICTED' : r.fit === null ? 'NO EVIDENCE' : '';
+    const fit = (r.fit === null ? '--' : String(r.fit)).padStart(3);
+    lines.push(`${fit}  ${r.id.padEnd(17)} ${r.tier}  ${String(r.jsLines).padStart(3)}js  ${r.states} state${r.states === 1 ? '' : 's'}  ${tag}`);
+    if (flags.has('--explain')) {
+      if (r.misses.length) lines.push(`     misses: ${r.misses.join(' · ')}`);
+      if (r.skipped.length) lines.push(`     skipped: ${r.skipped.join(', ')} (low confidence)`);
     }
   }
   if (gateNotes.length) {
@@ -857,13 +820,18 @@ if (!flags.has('--json')) {
     lines.push('GATES');
     for (const g of gateNotes) lines.push(`  ${g.severity === 'blocked' ? '✕' : '!'} ${g.gate}: ${g.reason}`);
   }
-  const pick = ranking.find((r) => r.eligible && !r.primaryOnly);
-  if (pick) {
+  if (decision.safe) {
+    const cell = (label, r) => {
+      if (!r) return `${label.padEnd(9)} none`;
+      const bits = [`${r.id}`, `${r.tier}`, `fit ${r.fit}`, `~${r.jsLines} own lines`, `${r.states} state${r.states === 1 ? '' : 's'}`];
+      return `${label.padEnd(9)} ${bits.join(' · ')}`;
+    };
     lines.push('');
-    lines.push(`PICK        ${pick.id} (${pick.tier}, ~${pick.jsLines} own lines) — fit ${pick.fit}`);
-  }
-  if (tieBreak) {
-    lines.push(`TIE-BREAK   ${tieBreak.reason}`);
+    lines.push('DECISION    fit is a floor (80); safe and reach are both offers');
+    lines.push(cell('SAFE', decision.safe));
+    lines.push(cell('REACH', decision.reach));
+    lines.push(cell('FALLBACK', decision.fallback));
+    lines.push(`          ${decision.reason}`);
   }
   if (gaps.length) {
     lines.push('');

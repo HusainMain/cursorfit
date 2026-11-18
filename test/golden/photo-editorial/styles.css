@@ -1,0 +1,152 @@
+:root {
+  --paper: #fbfaf7;
+  --ink: #111110;
+  --muted: #6b6862;
+  --accent: #b23a1f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 18px/1.65 "Tiempos Text", Georgia, serif;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 40px 88px;
+}
+
+.wordmark {
+  font-family: "Tiempos Headline", Georgia, serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+nav { display: flex; gap: 32px; }
+nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+
+main { padding: 0 88px 120px; }
+
+.lead { max-width: 1180px; }
+
+h1 {
+  font-family: "Tiempos Headline", Georgia, serif;
+  font-size: 6.5rem;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  margin: 0 0 32px;
+  max-width: 12ch;
+  animation: titleIn 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.standfirst {
+  max-width: 46ch;
+  font-size: 1.4rem;
+  color: var(--muted);
+  margin: 0 0 56px;
+}
+
+.lead img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 2px;
+  margin-bottom: 24px;
+  animation: imageIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lead p { max-width: 62ch; margin: 0 0 24px; }
+.lead a { color: var(--accent); text-underline-offset: 6px; }
+
+.grid {
+  margin-top: 96px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.grid a { position: relative; display: block; color: var(--paper); text-decoration: none; }
+.grid img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 2px; }
+.grid span {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.note { margin-top: 120px; max-width: 640px; }
+h2 { font-family: "Tiempos Headline", Georgia, serif; font-size: 2.5rem; margin: 0 0 16px; }
+.note p { color: var(--muted); margin: 0 0 24px; max-width: 54ch; }
+.note a { color: var(--accent); }
+
+footer { padding: 64px 88px; border-top: 1px solid #e4e1d9; }
+
+.btn {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  padding: 14px 28px;
+  border-radius: 2px;
+  font: inherit;
+  transition: background-color 280ms ease, color 280ms ease;
+}
+
+.btn:hover { background: var(--ink); color: var(--paper); }
+
+@keyframes titleIn {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes imageIn {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes captionIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes lineIn {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes settle {
+  from { letter-spacing: 0.02em; }
+  to { letter-spacing: -0.04em; }
+}
+@keyframes wipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes blurUp {
+  from { opacity: 0; filter: blur(8px); }
+  to { opacity: 1; filter: blur(0); }
+}
+@keyframes drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+@keyframes draw {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}

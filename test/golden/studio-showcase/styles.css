@@ -1,0 +1,123 @@
+:root {
+  --bg: #0e0e10;
+  --ink: #f5f4f0;
+  --muted: #9b9a96;
+  --accent: #c6ff3d;
+  --accent-2: #ff4d2e;
+  --accent-3: #3d7bff;
+  --line: #26262a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 18px/1.55 "Neue Montreal", ui-sans-serif, system-ui, sans-serif;
+}
+
+.hero {
+  min-height: 100vh;
+  padding: 110px 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+nav { display: flex; gap: 40px; }
+nav a { color: var(--muted); text-decoration: none; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.8rem; }
+
+h1 {
+  font-size: 9rem;
+  line-height: 0.88;
+  letter-spacing: -0.06em;
+  margin: 0;
+  max-width: 13ch;
+  animation: rise 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lede {
+  max-width: 46ch;
+  margin: 40px 0 0;
+  font-size: 1.35rem;
+  color: var(--muted);
+  animation: rise 1s 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.cta {
+  align-self: flex-start;
+  margin-top: 56px;
+  padding: 20px 36px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #0e0e10;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cta:hover { transform: scale(1.04); }
+
+.reel { padding: 120px 84px; }
+h2 { font-size: 2.75rem; letter-spacing: -0.03em; margin: 0 0 56px; max-width: 24ch; }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.grid a { display: block; color: var(--ink); text-decoration: none; }
+.grid img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), filter 420ms ease;
+}
+.grid a:hover img { transform: scale(1.05); filter: saturate(1.2); }
+.grid span { display: block; margin-top: 10px; color: var(--muted); font-size: 0.85rem; }
+
+.statement { padding: 140px 84px; max-width: 1100px; }
+.statement h2 { margin-bottom: 48px; }
+
+.btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  padding: 18px 30px;
+  border-radius: 999px;
+  font: inherit;
+  margin-right: 12px;
+  transition: border-color 320ms ease, background-color 320ms ease;
+}
+
+.btn:hover { border-color: var(--accent); background: rgba(198, 255, 61, 0.08); }
+
+footer { padding: 72px 84px; border-top: 1px solid var(--line); }
+footer a { color: var(--muted); margin-right: 32px; text-decoration: none; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(48px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { transform: translateX(60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { from { transform: translateX(-60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes blurIn { from { filter: blur(14px); opacity: 0; } to { filter: blur(0); opacity: 1; } }
+@keyframes clipUp { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes clipDown { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes lineGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes flicker { 0%, 100% { opacity: 1; } 45% { opacity: 0.4; } 55% { opacity: 0.8; } }
+@keyframes stretch { from { transform: scaleY(0.8); } to { transform: scaleY(1); } }
+@keyframes reveal { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes settle { from { letter-spacing: 0.04em; } to { letter-spacing: -0.03em; } }
+@keyframes glow { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.95; } }
+@keyframes tilt { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }

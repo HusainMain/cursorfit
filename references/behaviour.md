@@ -74,6 +74,23 @@ changes. Delegation is one listener for the life of the page.
 | `mask-reveal` | states 5 and 12 only. The mask radius animates 0→110px in ~120ms. |
 | `shader-ripple` | states 14–16 must disable the whole layer, not just hide it. |
 
+## Failure is a gate, not a tie-break
+
+Every family fails differently: a trail that stops emitting leaves no trace, a blend-difference
+cursor inside a stacking context is a grey smudge in the middle of the page. It is tempting to
+use "whose failure is quieter" as a way to choose between two families that score the same.
+Don't.
+
+A quiet failure is not a better cursor. It is a bug that takes longer to notice. Failure mode
+belongs to risk control, and risk control has exactly two instruments here:
+
+- the **gates** in `families.md`, which remove a family the site cannot carry;
+- the **fallback** slot, which is what a buyer takes when they want the least machinery.
+
+For every family that stays eligible, the failure is handled by a check in `gating.md` and a
+test in `verify.mjs`. If a family has a failure the checks cannot catch, the gate is
+incomplete — fix the gate, don't demote the family.
+
 ## Size and timing defaults
 
 | Property | Default | Acceptable range | Breaks when |

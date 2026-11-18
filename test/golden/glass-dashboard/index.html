@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Console</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="rail">
+    <a href="/">Overview</a>
+    <a href="/deployments">Deployments</a>
+    <a href="/logs">Logs</a>
+    <a href="/metrics">Metrics</a>
+    <a href="/alerts">Alerts</a>
+    <a href="/settings">Settings</a>
+  </aside>
+  <main class="pane">
+    <header class="bar">
+      <input type="search" placeholder="Search">
+      <button class="btn">Filter</button>
+      <button class="btn">Refresh</button>
+      <button class="btn btn--ghost">Export</button>
+      <button class="btn btn--ghost">Share</button>
+    </header>
+    <section class="cards">
+      <div class="card"><span>Requests</span><strong>1.28M</strong><button class="btn">Details</button></div>
+      <div class="card"><span>Error rate</span><strong>0.42%</strong><button class="btn">Details</button></div>
+      <div class="card"><span>p95 latency</span><strong>184ms</strong><button class="btn">Details</button></div>
+      <div class="card"><span>Builds</span><strong>36</strong><button class="btn">Details</button></div>
+    </section>
+    <table class="table">
+      <thead><tr><th>Build</th><th>Branch</th><th>Status</th><th>Duration</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>#4821</td><td>main</td><td>Ready</td><td>41s</td><td><button class="btn">Logs</button></td></tr>
+        <tr><td>#4820</td><td>feat/api</td><td>Ready</td><td>38s</td><td><button class="btn">Logs</button></td></tr>
+        <tr><td>#4819</td><td>fix/nav</td><td>Failed</td><td>12s</td><td><button class="btn">Logs</button></td></tr>
+        <tr><td>#4818</td><td>main</td><td>Ready</td><td>44s</td><td><button class="btn">Logs</button></td></tr>
+        <tr><td>#4817</td><td>feat/auth</td><td>Ready</td><td>39s</td><td><button class="btn">Logs</button></td></tr>
+      </tbody>
+    </table>
+    <section class="settings">
+      <label>Deploy key <input type="text" value="•••••"></label>
+      <label>Region <input type="text" value="eu-west"></label>
+      <label>Retention <input type="number" value="30"></label>
+      <label>Notify <input type="email" value="ops@example.com"></label>
+    </section>
+    <div class="row">
+      <button class="btn">Save</button>
+      <button class="btn">Cancel</button>
+      <button class="btn" disabled>Delete</button>
+      <button class="btn">Invite</button>
+      <button class="btn">Docs</button>
+      <button class="btn">Support</button>
+      <button class="btn">Changelog</button>
+      <button class="btn">Status</button>
+      <a href="/billing">Billing</a>
+      <a href="/team">Team</a>
+      <a href="/keys">Keys</a>
+      <a href="/webhooks">Webhooks</a>
+    </div>
+  </main>
+</body>
+</html>

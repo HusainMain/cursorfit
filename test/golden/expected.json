@@ -1,0 +1,57 @@
+{
+  "note": "Expectations are product judgements written before the 0.2.0 ranker was run against these fixtures. A mismatch is a finding, not a build failure to tune away. `safe` is what the tool should ship by default; `reach` is the more ambitious offer, when one clears the gates. Mismatches listed under knownGaps are expected failures: the run shows them but does not go red, so a regression cannot hide behind them.",
+  "fixtures": {
+    "quiet-docs": {
+      "safe": "dot",
+      "reach": null,
+      "rationale": "Airy 12 and expressive 6 put every louder family at least 14 points below the dot. There is no second offer that fits; naming one would invent ambition the page does not have. The fallback is the zero-JS cursor for a buyer who forbids JS."
+    },
+    "product-saas": {
+      "safe": "dot",
+      "reach": "dot-ring",
+      "rationale": "Moderate expression, one accent, 100vh hero: polish without personality is the brief."
+    },
+    "agency-portfolio": {
+      "safe": "state-label",
+      "reach": "mask-reveal",
+      "rationale": "Six project cards and a 7rem serif — labels are what the visitor notices. The reach is the reveal, which the image set already supports."
+    },
+    "photo-editorial": {
+      "safe": "state-label",
+      "reach": "mask-reveal",
+      "rationale": "Image-led editorial. Safe is the labelled cursor; the reach is the reveal, which needs the image set this site has."
+    },
+    "glass-dashboard": {
+      "safe": "dot",
+      "reach": "dot-ring",
+      "rationale": "Dense console with glass panels. Blend-difference is demoted by the stacking context, and a ring would cover the controls the pointer is aiming at."
+    },
+    "form-app": {
+      "safe": "dot",
+      "reach": null,
+      "rationale": "Form-first page: the caret must stay native and nothing may compete with the fields. Same as quiet-docs — every louder family is more than 10 fit points down, so none is offered."
+    },
+    "shader-hero": {
+      "safe": "state-label",
+      "reach": "shader-ripple",
+      "rationale": "The site already ships three and a hero canvas, so the expensive family is already paid for; the safe pick stays the labelled cursor."
+    },
+    "studio-showcase": {
+      "safe": "trail",
+      "reach": "mask-reveal",
+      "rationale": "Maximum expression, 20 images, no serif display — a particle ribbon is native to this register and a label system is not."
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "fit-rewards-silence",
+      "fixtures": ["agency-portfolio", "photo-editorial", "studio-showcase"],
+      "statement": "Fit charges for a miss and never rewards a family for having an opinion. dot-ring's bands cover almost any site (expressive 30-80, airy 30-100, editorial 0-75), so it sits at or near 100 and wins by default. state-label requires expressive >= 55 and editorial >= 50 - a real opinion about these three sites - and loses for holding it. The score also discounts a full-band miss to about 3% after the fifth root, so even an outright contradiction barely costs anything."
+    },
+    {
+      "id": "reach-tier-cap",
+      "fixtures": ["shader-hero"],
+      "statement": "reach may be at most one tier above safe. When the safe pick is T1, T3 is unreachable even on a repo that already imports three and where shader-ripple clears the floor at 80. The cap is doing its job on cost, but it means the GPU family can only ever be offered to a site already loud enough to pick a T2 safely."
+    }
+  ]
+}

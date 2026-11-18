@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Docs</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav>
+    <a href="/guide">Guide</a>
+    <a href="/api">API</a>
+    <a href="/cli">CLI</a>
+    <a href="/changelog">Changelog</a>
+  </nav>
+  <main>
+    <h1>Configuration</h1>
+    <p>Every option is read once at boot. The defaults are safe; override them in
+      <code>config.toml</code> when the defaults are wrong for your deployment.</p>
+    <h2>Port</h2>
+    <p>The server binds to <code>127.0.0.1:8080</code> unless told otherwise.</p>
+    <pre><code>port = 8080
+host = "127.0.0.1"</code></pre>
+    <h2>Retries</h2>
+    <p>See the <a href="/guide/retries">retry guide</a> and the
+      <a href="/api/retries">API reference</a>.</p>
+  </main>
+  <footer>
+    <a href="/license">License</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/status">Status</a>
+  </footer>
+</body>
+</html>

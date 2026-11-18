@@ -14,9 +14,11 @@ yes.
 ```markdown
 # cursorfit — <project name>
 
-**VERDICT** <one sentence, no jargon, names the family and the reason>
+**VERDICT** <one sentence, no jargon, names the safe family and the reason>
+**SAFE** `<family>` · fit `<n>` · T1 · ~45 own lines over the shared core
+**REACH** `<family>` · fit `<n>` · T2 · ~90 own lines   *(or: none — <the reason, one clause>)*
+**FALLBACK** `<family>` · fit `<n>` · T0 · zero JS
 **CONFIDENCE** high | medium | low
-**TIER** T0 | T1 | T2 | T3 - <cost in one clause: "zero JS", "~45 own lines over the shared core", "a canvas layer">
 
 ## What the site is
 
@@ -54,7 +56,7 @@ scroll-driven: <yes/no> · reduced-motion: <present/absent> · touch guard: <pre
 
 ## Decision
 
-> **<family>** — <what it looks like in one line>
+> **SAFE — `<family>`** — <what it looks like in one line>
 
 **Why this one**
 1. <evidence → consequence>
@@ -92,21 +94,20 @@ with an empty state is a build that is not finished.
 
 **It will not** — <the honest limitation of this family on this site, one sentence>
 
-**Override** *(include only if you changed the ranking)*
-Audit ranked `<family>` first at fit `<n>`. Chose `<family>` instead because `<evidence, with a
-file path or a measured value>`. What that costs: `<the downside the audit's pick did not have>`.
+**Override** *(include only if you changed the pick)*
+Audit chose `<family>` for the safe slot at fit `<n>`. Chose `<family>` instead because
+`<evidence, with a file path or a measured value>`. What that costs: `<the downside the audit's
+pick did not have>`.
 
-**Tie-break** *(include only if the audit printed one)*
-`<family>` scored `<n>` against `<family>` at `<m>`, inside the 2.5-point noise band. It won
-because it reacts to `<n>` control states against `<m>`. What that costs: `<the weaker fit, in
-plain words>`.
+## The other two offers
 
-## Alternates
+**REACH — `<family>`** (T2, fit `<n>`) <what it would look like on this site>. **Disadvantage:**
+<the real cost, in this sentence, not a footnote.>
 
-**A — `<family>`** <what it would look like>. **Disadvantage:** <the real cost, in this
-sentence, not a footnote.>
+**FALLBACK — `<family>`** (T0, fit `<n>`) <what it looks like>. **Disadvantage:** <the real cost.>
 
-**B — `<family>`** <what it would look like>. **Disadvantage:** <the real cost.>
+Only one is built. The safe is the default; say "build the reach instead" and the reach is what
+gets written.
 
 ## Build
 
@@ -148,6 +149,19 @@ for `<group>`.
 "Dot and ring in the site's cyan, with View labels on project cards — it matches the neon
 editorial register without adding a second animation system to a page that already has one."
 
+**The three slots are one answer, not a menu.** Safe is what you build; reach is the stretch;
+fallback is the floor. Present them in that order and never as equals. If you would not ship
+the reach yourself, say so in its disadvantage.
+
+**A reach may be empty.** When every louder eligible family gives up more than 10 fit points,
+write `none` and the reason in one clause. Do not invent a second family to fill the slot, and
+do not pad the page to look thorough.
+
+**The fallback is the zero-JS answer when one exists.** `css-static` is offered there on
+purpose: it is the only family a buyer can take when JavaScript is forbidden, and a repo cannot
+reveal that constraint. When it is not eligible, the fallback is the cheapest family left and
+the report says which cost that choice makes.
+
 **Every profile bullet is checkable.** "Uses `cubic-bezier(0.23,1,0.32,1)` once, on the hero
 copy" is checkable. "Modern feel" is not.
 
@@ -155,8 +169,9 @@ copy" is checkable. "Modern feel" is not.
 layer runs, not a description of it. If a row says "unchanged" for a link or a button, the
 build is wrong; only body text, inputs and disabled controls are allowed to say that.
 
-**Alternates are real alternatives, not strawmen.** Each must be a family that genuinely
-scored close. Putting an obviously wrong option second is worse than offering one alternate.
+**The reach is a real offer, not a strawman.** It must be an eligible family that cleared the
+fit slack, with a higher expressive floor than the safe. Putting an obviously wrong option in
+the slot is worse than writing `none`.
 
 **The disadvantage goes in the same sentence as the offer.** Splitting it into a footnote is
 how a recommendation becomes a sales pitch.
@@ -168,16 +183,21 @@ either dishonest or hasn't understood the family.
 "greps and build passed". `rendered` requires `scripts/verify.mjs` to have run, or the nine
 checks done by hand, with skips named.
 
-**Scores are decision support, never a percentage of anything.** Quote a score when it is
-`high` confidence. At `medium`, quote it as a band and name the blind spot that caused it. At
-`low`, don't quote it — ask.
+**Scores are decision support, never a percentage of anything.** Quote fit once as "fit 97.4
+against a floor of 80" so nobody reads it as a grade out of 100. At `medium` confidence quote
+the axis as a band and name the blind spot. At `low`, don't quote it — ask.
 
-**An override appears in the report, not in the reasoning.** If the ranking was changed, the
-audit's pick, the override, the evidence and the cost are all visible to the reader. A silent
+**An override appears in the report, not in the reasoning.** If the pick was changed, the
+audit's slot, the override, the evidence and the cost are all visible to the reader. A silent
 override is indistinguishable from a bug.
 
 **Confidence must match the profile.** A low-confidence profile cannot produce a verdict with
 no condition. Write it as: "If <answer> is true, `<family>`. If not, `<family>`."
+
+**Name a known gap when one decides the case.** The golden set records two: fit rewards the
+family with the widest bands, and a reach can never jump two tiers. If either chose this
+answer, one line under the verdict says so. A recommendation that hides its own weak point is
+the thing this skill exists to replace.
 
 ---
 
@@ -186,6 +206,10 @@ no condition. Write it as: "If <answer> is true, `<family>`. If not, `<family>`.
 > **VERDICT** Dot and ring in `--neon-cyan`, 12px dot, 34px ring, with "View" labels on the
 > three project cards. It matches the site's neon editorial register and stays out of the
 > way of a hero that already runs a 3D canvas.
+>
+> **SAFE** `dot-ring` · fit 97.5 · T1 · ~45 own lines
+> **REACH** `trail` · fit 83.3 · T2 · ~90 own lines
+> **FALLBACK** `dot` · fit 85.2 · T1 · ~25 own lines
 >
 > **Why this one**
 > 1. The site runs 23 keyframes and a 560vh scroll-driven hero — a trail or shader would be a
@@ -197,5 +221,10 @@ no condition. Write it as: "If <answer> is true, `<family>`. If not, `<family>`.
 >
 > **It will not** carry the cursor over form fields — `rate-limit` inputs keep the native
 > I-beam, because the input flow is where the product actually gets used.
+>
+> **REACH — `trail`** (T2, fit 83.3) A particle ribbon in the same cyan, emitted by distance so
+> a fast flick draws a line rather than dots. **Disadvantage:** it is the second animation
+> system the hero already warned against, and it will read as noise on a page that has one
+> canvas doing the depth work.
 
 That's the shape. Three reasons, each a fact and a consequence, then the cost.

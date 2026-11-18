@@ -32,18 +32,30 @@ order of magnitude above everything here.
 Each family declares a comfortable range on all five axes from `profile.md`. A band is a
 **tolerance, not a target**: inside it costs nothing, outside it costs.
 
-Scoring: for each axis the family misses, take the distance outside the band, divide by 30,
-cap at 1, and knock 45% off the family's score. **The penalties compound**, because a family
-has to fit the whole site rather than win on average. A band of `0–100` means "no preference"
-and is skipped.
+For each axis a family misses, take the distance outside the band, divide by 30, cap at 1, and
+knock 45% off that axis. Fit is the **geometric mean** of those per-axis factors over the axes
+the family actually declares an opinion on:
 
 ```
-fit = 100 × Π (1 − 0.45 × min(1, distance / 30))
+factor = 1 − 0.45 × min(1, distance / 30)
+fit    = 100 × ( Π factor ) ^ (1 / active)
 ```
 
-Two axes badly missed lands around 30. One axis badly missed lands around 55. Everything
-inside lands at 100 — which means "no axis rules it out", not "guaranteed good". Fit is a
-rank, not a probability.
+`active` counts the bands that are narrower than `0–100` **and** readable. The root is what
+makes the number comparable: a family that declares two opinions and one that declares five
+land on the same scale, so `css-static` cannot win by having fewer ways to be wrong. Up to
+0.1.2 the penalties were multiplied without the root, and a two-axis family out-scored a
+five-axis family for identical per-axis quality.
+
+An axis whose confidence is `low` is **skipped**, not scored as a pass. "We could not read
+this" is not "this is in range": a site the reader could not parse must not come out looking
+quiet. If every active axis was skipped, fit is `null` — there is no evidence, so the family
+is not offered.
+
+Everything inside lands at 100. That means **"no axis rules it out"**, not "guaranteed good",
+and more than one family can sit at 100 for the same site. Fit is a floor, not a rank: 80 is
+the point below which a family starts contradicting the site. Above it, the offers are chosen
+by the rules further down, not by the highest number.
 
 It is also not a measurement of quality. Nobody has shown that a site at 85 expressiveness is
 better served by a trail than one at 65 — the bands encode "designed for", not "proven on".
@@ -79,7 +91,12 @@ These override the score. A family that fails a gate is not offered, regardless 
 | form fields ≥ 60% of controls | blocks `trail`, `mask-reveal`, `blend-difference` |
 | an existing GPU canvas in the hero | `trail` becomes alternate-only — two canvas effects compete |
 | `backdrop-filter` / `isolation` on the cursor's ancestors | `blend-difference` becomes alternate-only — difference blending cannot reach the surface behind a stacking context |
-| T1 budget exceeded (>90 lines) | the family is wrong; step down a tier |
+
+There is no 90-line gate in the script, and none of the gates above is a line count. The line
+budgets in the catalogue are a **T1 promise**: the shared core plus the family layer has to stay
+small enough that a T1 is still the cheap option. A T2 or T3 family is allowed to be long — that
+is what the tier is for. If a T1 implementation runs past ~90 of its own lines, the family was
+the wrong choice and you step down a tier, but that is a judgement, not an automated block.
 
 ---
 
@@ -201,25 +218,41 @@ A GPU shader distorts, ripples, or halftones the content following the pointer.
 
 ---
 
-## How to choose between near-ties
+## Which family gets offered
 
-A gap under **2.5 points is not a preference**. The bands are heuristics; 93 against 91 means
-the two families fit the site about equally well. The audit settles that case mechanically:
-inside the band, a family **in the same tier** that reacts to more of the controls the site
-actually has wins, and the swap is printed as `TIE-BREAK` so the report can show it. It never
-crosses a tier — at equal fit the cheaper family is the safer answer, and a T1 does not get to
-leapfrog a T0 on state count. The rules below are the human version of the same judgement, for
-gaps the script leaves alone.
+The audit does not return a list. It returns three named offers, and only one is built.
 
-1. **Prefer the family that does more at a control.** If two families fit within 2.5 points and
-   one has labels, take the one with labels — a state system is what the visitor notices.
-2. **Prefer the lower tier.** If `dot-ring` and `trail` score within 8 points, take `dot-ring`.
-3. **Prefer the family that uses controls that exist.** `state-label` needs hoverable groups;
-   if the audit found 2, it can't carry labels.
-4. **Prefer the family whose failure is quiet.** A broken trail is invisible; a broken
-   blend-difference cursor is a grey smudge in the middle of the page.
-5. **Break ties with the motion signature.** If the site already has 20+ keyframes, adding a
-   continuously animating cursor is the difference between "alive" and "busy".
+| Slot | Rule | What it is for |
+|---|---|---|
+| **safe** | highest fit among eligible families; ties go to the cheaper tier, then the family with more states, then alphabetical order | the one to ship if the owner says nothing |
+| **reach** | highest expressive floor among eligible families at most one tier above safe and within 10 fit points of it | the answer to "what if I want more" |
+| **fallback** | `css-static` when it is eligible and unused, otherwise the cheapest remaining eligible family | the answer to "nothing moving, thanks" |
 
-None of these rules may override a hard gate, and none of them may revive a family the audit
-blocked. A tie-break changes the order of two eligible families, nothing more.
+`css-static` is never the safe or the reach. Its bands are a strict subset of `dot`'s
+(expressive 0–45 against 0–60, energy 0–55 against 0–65), so it can never out-fit the dot; and
+since 0.1.2 every JS family ships the base state layer, which a bitmap cursor cannot. Its honest
+niche is "the buyer forbids JavaScript", and that is a constraint a repo cannot reveal. So it is
+offered as the fallback, and named as the safe pick the moment the buyer states the constraint.
+
+The reach may cost fit — ambition usually does — but not more than 10 points. Without that
+bound the reach was chosen on floor alone, which let a family at 83.7 with three missed axes be
+offered while one at 95.8 with a single small miss was skipped. If no family clears both the
+tier cap and the slack, the reach is empty. That is a real answer: on an austere page there is
+no louder cursor that still fits, and inventing one would be selling.
+
+Only one variant runs at a time. Never ship the safe and the reach together.
+
+### When the agent may override the pick
+
+1. **A stated constraint wins.** "No JS", "keyboard only", "we ship to kiosks" — the buyer knows
+   things the repo cannot show. Name the family the constraint selects and say what it costs.
+2. **A hard gate always wins.** Never revive a blocked family because the number was high.
+3. **A known gap.** The golden set records two. Fit rewards the family with the widest bands, so
+   `dot-ring` wins sites it has no opinion about; and a reach can never jump two tiers, so the
+   GPU family is unreachable when the safe pick is T1. If either decides the case, say so rather
+   than presenting the pick as settled.
+4. **The reach's disadvantage is fatal here.** `mask-reveal` doubles the image payload;
+   `blend-difference` dies inside a stacking context. If that cost lands on this site, drop the
+   reach and say why.
+
+Every override needs a reason and a file path. "I preferred it" is not an override.
