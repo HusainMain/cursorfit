@@ -108,10 +108,13 @@ pick did not have>`.
 
 ## Pick one
 
-**Safe — `<family>`.** <what you get>. **Cost:** <what it costs>.
-**Reach — `<family>`.** <what you get>. **Cost:** <what it costs>.
+**Safe — the <plain description>.** <what you get, in plain words>.
+**Advantage:** <one sentence>. **Disadvantage:** <one sentence>.
 
-Nothing is written until this is answered. Say "safe", "reach", or "you pick".
+**Reach — the <plain description>.** <what you get, in plain words>.
+**Advantage:** <one sentence>. **Disadvantage:** <one sentence>.
+
+Stop here until this is answered. Say "safe", "reach", or "you pick".
 
 ## Build
 
@@ -157,10 +160,12 @@ editorial register without adding a second animation system to a page that alrea
 stretch; fallback is the floor. Present them in that order and never as equals. If you would not
 ship the reach yourself, say so in its disadvantage.
 
-**Ask before you build, and never build on silence.** One message with both slots, each cost in
-the same breath, is a question. Three slots listed and a file quietly written is not. If nobody
-is there to answer, build safe and say the ask was skipped — an unasked build is a default, not
-a decision the reader made.
+**Ask before you build, in plain words, and stop for the answer.** One message with both slots,
+each one's advantage and disadvantage stated outright, is a question. Three slots listed and a
+file quietly written is not. The question carries no family ids, no fit numbers, no tier labels,
+no line counts — the person owns a website, not a scoring rubric. If nobody is there to answer,
+build safe and say the ask was skipped: an unasked build is a default, not a decision the reader
+made.
 
 **Say which slot is installed — after the build.** Three slots are three offers, not a package.
 Before the build the line names what you recommend; after it, the same line names what was

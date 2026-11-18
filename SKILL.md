@@ -5,7 +5,7 @@ license: MIT
 compatibility: No runtime dependencies. Node 18+ for the optional scripts/audit.mjs reader; Playwright is optional and used only by scripts/verify.mjs for the browser pass. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
 metadata:
   author: makeityours
-  version: "0.3.0"
+  version: "0.3.1"
 ---
 
 # cursorfit
@@ -16,6 +16,9 @@ is worth paying, and only then builds.
 
 The promise in one line: **the cursor matches this site, or you get told why it shouldn't
 have one.**
+
+**Nothing is written until you choose.** The run stops at Stage 5 with two options and their
+trade-offs, in plain words, and waits for your answer. That stop is a gate, not a courtesy.
 
 ## What this answers
 
@@ -39,10 +42,14 @@ feels modern and minimal" is not evidence and must never appear in the output.
 | 2. Score | five axes, each with evidence and a confidence level; motion signature |
 | 3. Gap-fill | at most three questions, each with a default |
 | 4. Decide | safe, reach and fallback — each with its disadvantage; overrides allowed with evidence |
-| 4b. Ask | safe or reach, cost attached to each; nothing is written until it is answered |
-| 5. Build | the chosen slot, written into the repo and wired into the entry point |
-| 6. Verify | greps, the build, and a browser pass with `scripts/verify.mjs` |
-| 7. Report | the format in `references/recommendation.md` |
+| 5. Ask — **hard gate** | safe or reach in plain words, one advantage and one disadvantage each; stop here until the owner answers |
+| 6. Build | the chosen slot, written into the repo and wired into the entry point |
+| 7. Verify | greps, the build, and a browser pass with `scripts/verify.mjs` |
+| 8. Report | the format in `references/recommendation.md` |
+
+**Stage 5 is a stop, not a step you narrate.** Work through stages 0–4 freely, then end the
+message with the question and wait. If you have already changed a file when you reach stage 5,
+you have skipped the gate and the run is wrong.
 
 Do not skip from stage 1 to stage 4. The scoring is what stops the answer from being taste
 dressed up as analysis.
@@ -192,34 +199,94 @@ case, name it instead of presenting the pick as settled.
 An override with no file path is taste. Taste is allowed in the last mile — size, easing, the
 exact label — never in the choice of family.
 
-### Ask before you write a file
+Stop here. The ask is the next stage and it is a hard gate — see Stage 5.
 
-Nothing is implemented until the owner picks. Put both slots in one message, each with its cost
-attached:
+## Stage 5 — Ask (hard gate)
 
-> **Safe — state-label.** Fit 98.5. Four states, ~85 own lines, no canvas. It reads as
-> considered rather than memorable; on a page this expressive the cursor will not be the thing
-> anyone talks about afterwards.
+The run does not continue until the owner answers. Write no files, make no repo changes, and do
+not start Stage 6 in the same message as the question. The question is the last thing you say.
+
+### Say it in plain words
+
+The person owns a website. They do not know what a tier is, and they should not have to. In the
+question itself:
+
+- **No family ids.** "A dot with a ring", not `dot-ring`.
+- **No numbers from the audit.** No fit, no tier, no line counts, no state counts. Those belong
+  in the report, after the choice.
+- **One advantage and one disadvantage per option**, one sentence each, named as such.
+- **A disadvantage is a felt consequence**, not a spec. "It drags a smear across paragraphs while
+  you read" is a disadvantage. "~90 own lines" is not.
+
+### The shape
+
+> Two options that both fit your site. Pick one and I'll build it.
 >
-> **Reach — trail.** Fit 93.1, one tier up. Motion is what this page sells, so a trail earns
-> its keep — and it leaves a smear over text while scrolling, which some readers hate.
+> **Safe — the dot and ring.** A small dot follows your pointer with a thin ring trailing behind
+> it. On a link the ring opens up, and on a card a short word appears.
+> **Advantage:** it reads as deliberate straight away and never fights the text you're reading.
+> **Disadvantage:** it's quiet. On a page this animated, it's the one detail nobody will mention.
+>
+> **Reach — the trail.** A short ribbon of dots follows the pointer and fades behind it.
+> **Advantage:** your site already sells motion, so the cursor feels like part of the design
+> instead of something added on.
+> **Disadvantage:** it smears across paragraphs while you read, and a few visitors will find it
+> distracting enough to say so.
+>
+> Which one — safe or reach?
 
-If the reach is empty, say so and offer safe against the fallback instead. "A cursor that
-reacts quietly" versus "no custom cursor" is still a real choice.
+### What counts as an answer
 
-Build safe when the owner says "you pick". Build safe when there is nobody to ask — a headless
-run, a CI job, an agent with no human in the loop — and say in the report that the ask was
-skipped and safe was taken by default. Silence is not consent: never describe an unasked build
-as agreed.
+| Reply | What you do |
+|---|---|
+| names a slot — "safe", "the ring", "reach", "the trail" | build that one |
+| "you pick", "your call", "whatever you think" | build safe, and say you took the recommendation |
+| "ok", "go ahead", "sounds good" with no slot named | build safe, and say you read that as the safe pick |
+| nothing | nothing. Ask once more, shorter, then stop |
 
-Ask once per run, not once per file. A rerun against an installed cursor starts from "is this
-still the right family", which is a different question from "which slot do I build".
+"Ok" is not a choice, but it is also not a reason to keep asking forever. Take safe, say which
+word you took it from, and move on. Never write "I'll go ahead with safe unless you object" —
+that is a deadline, not a question.
 
-## Stage 5 — Build
+### When a cursor already exists
 
-Do not start here until Stage 4's ask has an answer or a stated default. Complete
-implementations for every family live in `references/recipes.md`. Copy the recipe,
-then change only what the profile says to change.
+Stage 0 found one, so the first question is not "which family" — it is whether to touch it at
+all. Ask that in two options, not three:
+
+> Your site already has a custom cursor, and it mostly works. Two options:
+>
+> **Repair it.** I keep the look you have and fix the things that break — clicks landing under
+> the pointer, the cursor on phones, the text caret in form fields.
+> **Advantage:** nothing changes visually, so nobody who liked it notices. **Disadvantage:** if
+> the look itself is what's bothering you, repairing won't help.
+>
+> **Replace it.** I build the cursor the audit recommends for this site.
+> **Advantage:** you get the version that fits your palette, speed and reading density.
+> **Disadvantage:** the current look goes away, and if you preferred it you'd have to undo the
+> change.
+
+Only if they pick replace do you ask safe or reach. Never repair or replace on your own
+initiative — a repair is still a change to their site.
+
+### When there is nobody to ask
+
+A headless run, a CI job, an agent with no human in the loop: build safe, and put the skipped ask
+in the report as a skipped ask. Safe-by-default is a fallback for a missing person, never a
+claim that someone agreed.
+
+### If the reach is empty
+
+Say so in the same question and offer safe against the fallback instead — "a cursor that reacts
+quietly" versus "no custom cursor at all" is a real choice, not a formality.
+
+Ask once per run, not once per file. A rerun against an installed cursor asks a different
+question — "keep this, repair it, or replace it" — and still asks before touching anything.
+
+## Stage 6 — Build
+
+Complete implementations for every family live in `references/recipes.md`. Build the slot the
+owner named in Stage 5 — only that one. Copy the recipe, then change only what the profile says
+to change.
 
 Non-negotiables:
 
@@ -256,7 +323,7 @@ Two ready-made asset sets exist so the build doesn't stall on artwork:
 Copy the files into the repo (usually `public/cursors/` and `src/styles/`), don't reference
 this skill's folder at runtime.
 
-## Stage 6 — Verify
+## Stage 7 — Verify
 
 Three levels, in order. Each one catches what the previous one can't.
 
@@ -288,7 +355,7 @@ A skipped check is not a pass. `verify.mjs` prints skips separately for that rea
 the page didn't expose enough to test, and the report has to say which check was skipped and
 why.
 
-## Stage 7 — Report
+## Stage 8 — Report
 
 Use `references/recommendation.md`. The report always ends with two lists: **what to look
 at** and **what is deliberately disabled**.

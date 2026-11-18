@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.1 — 2026-11-18
+
+### Fixed — the ask was a subsection, so it was skipped
+
+0.3.0 put the ask at the end of Stage 4 as a sub-heading. The first real run went straight past
+it: the report listed the slots and started writing. An instruction that sits inside the stage
+before the decision reads as commentary on that stage, not as a step.
+
+The ask is now Stage 5 with its own row in the pipeline table, and the build moved to Stage 6.
+The section opens with the gate — write no files, end the message with the question — and closes
+with what counts as an answer, including the awkward reply ("ok") that is neither silence nor a
+choice.
+
+### Changed — the question is in plain words
+
+The old example asked with `fit 98.5`, `T1`, `85 own lines`, `4 states`. None of that means
+anything to the person who owns the website, and it made the choice read like a spec sheet
+instead of a trade-off. The question now carries no family ids and no audit numbers: each option
+gets a plain description, one advantage and one disadvantage, one sentence each.
+
+A disadvantage has to be a felt consequence. "It smears across paragraphs while you read" is
+allowed. "~90 own lines" is not.
+
+### Added — the repair job asks too
+
+A repo that already has a cursor skips straight to the repair checklist, and 0.3.0 never said
+whether the owner wanted that. Repairing someone's site is still changing it. Stage 5 now has a
+two-option question for that case — repair or replace — and only asks safe-versus-reach if the
+answer is replace.
+
 ## 0.3.0 — 2026-11-18
 
 ### Changed — the skill asks before it writes

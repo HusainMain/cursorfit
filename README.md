@@ -53,8 +53,9 @@ read the repo  →  close the gaps  →  score  →  gate  →  pick one  →  i
 7. **Offers** three named slots instead of a gallery — **safe** (highest fit), **reach** (the
    most expressive family at most one tier up that still fits within 10 points), and
    **fallback** (the zero-JS answer). One of them gets built, after the owner picks.
-8. **Confirms** the slot before writing a file: safe or reach, each with what it costs. Safe is
-   the recommendation and the default when there is no one to ask — never the silent choice.
+8. **Stops and asks** before writing a file — safe or reach, in plain words, with one advantage
+   and one disadvantage each. The run does not continue until you pick. Safe is the
+   recommendation and the fallback when there is nobody to ask, never the silent choice.
 9. **Builds** the chosen slot as `cursor.css` + `cursor.js`, or a React component, wired to the
    site's existing tokens. Every build starts with the same
    state layer — link opens a ring, button becomes a capsule, a field hands the caret back — so
