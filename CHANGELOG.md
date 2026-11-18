@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1 — 2026-11-18
+
+### Fixed — three offers looked like three installs
+
+`DECISION` printed `fit is a floor (80); safe and reach are both offers` above the three slots.
+True, and misleading to anyone who then opens their repo: nothing said that only the safe slot
+is written. The first real test of 0.2.0 was someone looking for `trail` in a repo built with
+`state-label` — exactly the reading that line invited.
+
+The line now names what is installed: `safe is built unless you ask for the reach`, or
+`safe is built; nothing louder clears the bar` when the reach is empty. `recommendation.md`
+gains the matching rule for the written report.
+
+No selection behaviour changed. The golden set and the selection tests are untouched and pass.
+
 ## 0.2.0 — 2026-11-18
 
 ### Changed — the ranking was measuring the wrong thing

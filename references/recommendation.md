@@ -153,6 +153,10 @@ editorial register without adding a second animation system to a page that alrea
 fallback is the floor. Present them in that order and never as equals. If you would not ship
 the reach yourself, say so in its disadvantage.
 
+**Say which slot is installed.** Three slots are three offers, not a package. One line says
+only the safe is written; the reader should never discover the difference by looking at their
+repo. The audit prints it above the slot list, and the report repeats it under the same block.
+
 **A reach may be empty.** When every louder eligible family gives up more than 10 fit points,
 write `none` and the reason in one clause. Do not invent a second family to fill the slot, and
 do not pad the page to look thorough.

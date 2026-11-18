@@ -5,7 +5,7 @@ license: MIT
 compatibility: No runtime dependencies. Node 18+ for the optional scripts/audit.mjs reader; Playwright is optional and used only by scripts/verify.mjs for the browser pass. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
 metadata:
   author: makeityours
-  version: "0.2.0"
+  version: "0.2.1"
 ---
 
 # cursorfit
