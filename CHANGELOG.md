@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3.2 — 2026-11-19
+
+### Added — listing metadata and a repeatable package
+
+`SKILL.md` now carries the fields Agensi's upload form reads: `summary`, `version`, `tags`,
+`keywords`, `use_cases` and `docs_url`. The description says "implement the one you choose"
+instead of "implement one family", which matches what Stage 5 does.
+
+`tools/pack-agensi.mjs` builds the upload ZIP and checks it on the way out:
+
+- one top-level `cursorfit/` folder with `SKILL.md` at its root, which is the layout Agensi's
+  scan validates
+- `scripts/audit.mjs` rebuilt as a single file, because Agensi runs each script from a
+  temporary file where `import './rank.mjs'` cannot resolve; the repo keeps the two files apart
+  for testing
+- every script passes `node --check`, and the bundled audit is executed once from an empty
+  temp directory — the same isolation the marketplace uses
+- no binary files, since Agensi delivers text only
+- the packaged README drops the hero image and the rows for files the package does not ship
+
+The package is 20 files, 211 KB. `scripts/audit.mjs` is 45 KB in the bundle, above Agensi's
+20 KB-per-script guideline; the alternative was a script that cannot run on its own.
+
 ## 0.3.1 — 2026-11-18
 
 ### Fixed — the ask was a subsection, so it was skipped

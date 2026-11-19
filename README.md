@@ -261,8 +261,8 @@ test/fixture.html         a correct implementation, used to test the verifier
 test/extract.mjs          pulls the recipe code out of the docs so the test tests the docs
 ```
 
-`SKILL.md` sits at the root on purpose: that is the one hard requirement for the Agensi
-package format, and it also means a plain `git clone` into a skills folder works untouched.
+`SKILL.md` sits at the root of the skill folder on purpose: Agensi requires it there, and a
+plain `git clone` into a skills folder works untouched.
 
 ## Limits — read this before you judge it
 

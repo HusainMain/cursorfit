@@ -1,11 +1,32 @@
 ---
 name: cursorfit
 description: Choose and build the right custom cursor for a website. Audits a repo's palette, typography, motion and layout, scores the site's design character on five axes, then recommends one cursor family and implements the one you choose, using the site's own design tokens. Use when someone asks for a custom cursor, mouse follower, cursor trail, magnetic cursor, blend-mode cursor, dot-and-ring cursor, or asks which cursor style fits their site. Reads a repo or CSS files; no live URL needed.
+summary: Scores a site's design character and builds the custom cursor that fits it, in the site's own colour, speed and size — or says why it shouldn't have one.
+version: "0.3.2"
 license: MIT
 compatibility: No runtime dependencies. Node 18+ for the optional scripts/audit.mjs reader; Playwright is optional and used only by scripts/verify.mjs for the browser pass. Covers HTML/CSS, Vite/React, Next, Vue, Svelte, Astro, WordPress and Shopify themes.
+tags:
+  - custom-cursor
+  - design-audit
+  - frontend
+  - css
+  - react
+keywords:
+  - custom cursor
+  - mouse follower
+  - cursor trail
+  - magnetic cursor
+  - blend mode cursor
+  - dot and ring cursor
+use_cases:
+  - Add a custom cursor that matches an existing site's colour, speed and typography
+  - Decide whether a site should have a custom cursor at all
+  - Repair a custom cursor that eats clicks, breaks on phones or hides the text caret
+  - Choose between dot, ring, trail, label, blend-mode, magnetic and shader cursors
+docs_url: https://github.com/HusainMain/cursorfit
 metadata:
   author: makeityours
-  version: "0.3.1"
+  version: "0.3.2"
 ---
 
 # cursorfit
@@ -192,7 +213,7 @@ buyer states a constraint the repo cannot hold. To claim one, state all four:
 3. the slot you are replacing it with,
 4. what the reader loses by taking the override.
 
-The golden set in `test/golden/` records two places the model is known to be wrong: fit rewards
+The golden set used to validate this skill records two places the model is known to be wrong: fit rewards
 the family with the widest bands, and a reach can never jump two tiers. If either decides the
 case, name it instead of presenting the pick as settled.
 
@@ -374,7 +395,7 @@ at** and **what is deliberately disabled**.
   not predict conversion, taste, or whether the client's boss likes it.
 - **Fit rewards the widest bands.** A family with opinions it can satisfy almost anywhere
   (`dot-ring`: expressive 30–80, airy 30–100) sits at or near 100 and wins by default, while a
-  family with a narrower opinion loses for holding it. `test/golden/` records this as a known
+  family with a narrower opinion loses for holding it. The golden set records this as a known
   gap rather than hiding it.
 - **A reach cannot jump two tiers.** The cap that stops a T3 being offered to a T1 site also
   means the GPU family is unreachable on a site whose safe pick is cheap — even one that

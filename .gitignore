@@ -23,3 +23,6 @@ desktop.ini
 
 # generated from references/recipes.md by test/extract.mjs
 test/_generated/
+
+# hyperframes video builds (not part of the skill)
+brag-output*/
